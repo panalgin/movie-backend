@@ -1,5 +1,12 @@
 # Movie Backend API
 
+![Coverage](https://img.shields.io/badge/Coverage-75%25-yellow.svg?style=flat&logo=jest)
+![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-7.2-2D3748?logo=prisma)
+![License](https://img.shields.io/badge/License-MIT-green?logo=opensourceinitiative)
+
 A NestJS-based movie management API using the CQRS pattern.
 
 ## Tech Stack
@@ -130,7 +137,9 @@ Each command/query has a dedicated handler class. Handlers are invoked through t
 | `yarn format` | Run Biome formatter |
 | `yarn biome` | Lint + format + import sorting |
 | `yarn test` | Run unit tests |
-| `yarn test:e2e` | Run E2E tests |
+| `yarn test:watch` | Run unit tests in watch mode |
+| `yarn test:cov` | Run unit tests with coverage + update badge |
+| `yarn test:e2e` | Run E2E tests (requires test database) |
 
 ## API Endpoints
 
@@ -254,4 +263,4 @@ docker compose logs -f  # Follow logs
 
 ## License
 
-UNLICENSED
+This project is licensed under the [MIT License](LICENSE).

@@ -1,0 +1,250 @@
+import type { INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import type { App } from 'supertest/types';
+import { AppModule } from '../src/app.module';
+import { PrismaService } from '../src/prisma';
+
+describe('Movies (e2e)', () => {
+  let app: INestApplication<App>;
+  let prisma: PrismaService;
+  let createdMovieId: string;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    prisma = moduleFixture.get<PrismaService>(PrismaService);
+    await app.init();
+  });
+
+  beforeEach(async () => {
+    // Clean up movies table before each test
+    await prisma.movie.deleteMany();
+  });
+
+  afterAll(async () => {
+    // Clean up and close
+    await prisma.movie.deleteMany();
+    await prisma.$disconnect();
+    await app.close();
+  });
+
+  describe('POST /movies', () => {
+    it('should create a movie with all fields', async () => {
+      const createDto = {
+        title: 'Inception',
+        description: 'A mind-bending thriller',
+        releaseYear: 2010,
+        rating: 8.8,
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/movies')
+        .send(createDto)
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        title: createDto.title,
+        description: createDto.description,
+        releaseYear: createDto.releaseYear,
+        rating: createDto.rating,
+      });
+      expect(response.body.id).toBeDefined();
+      expect(response.body.createdAt).toBeDefined();
+      expect(response.body.updatedAt).toBeDefined();
+
+      createdMovieId = response.body.id;
+    });
+
+    it('should create a movie with only title', async () => {
+      const createDto = {
+        title: 'The Matrix',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/movies')
+        .send(createDto)
+        .expect(201);
+
+      expect(response.body.title).toBe(createDto.title);
+      expect(response.body.description).toBeNull();
+      expect(response.body.releaseYear).toBeNull();
+      expect(response.body.rating).toBeNull();
+    });
+  });
+
+  describe('GET /movies', () => {
+    beforeEach(async () => {
+      // Create test movies
+      await prisma.movie.createMany({
+        data: [
+          { title: 'Movie 1', releaseYear: 2020 },
+          { title: 'Movie 2', releaseYear: 2021 },
+          { title: 'Movie 3', releaseYear: 2022 },
+        ],
+      });
+    });
+
+    it('should return all movies', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/movies')
+        .expect(200);
+
+      expect(response.body).toHaveLength(3);
+    });
+
+    it('should return movies with pagination (skip)', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/movies?skip=1')
+        .expect(200);
+
+      expect(response.body).toHaveLength(2);
+    });
+
+    it('should return movies with pagination (take)', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/movies?take=2')
+        .expect(200);
+
+      expect(response.body).toHaveLength(2);
+    });
+
+    it('should return movies with pagination (skip + take)', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/movies?skip=1&take=1')
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+    });
+
+    it('should return empty array when no movies exist', async () => {
+      await prisma.movie.deleteMany();
+
+      const response = await request(app.getHttpServer())
+        .get('/movies')
+        .expect(200);
+
+      expect(response.body).toEqual([]);
+    });
+  });
+
+  describe('GET /movies/:id', () => {
+    let movieId: string;
+
+    beforeEach(async () => {
+      const movie = await prisma.movie.create({
+        data: {
+          title: 'Test Movie',
+          description: 'Test Description',
+          releaseYear: 2023,
+          rating: 7.5,
+        },
+      });
+      movieId = movie.id;
+    });
+
+    it('should return a movie by id', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/movies/${movieId}`)
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        id: movieId,
+        title: 'Test Movie',
+        description: 'Test Description',
+        releaseYear: 2023,
+        rating: 7.5,
+      });
+    });
+
+    it('should return null for non-existent movie', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/movies/non-existent-uuid')
+        .expect(200);
+
+      expect(response.body).toEqual({});
+    });
+  });
+
+  describe('PUT /movies/:id', () => {
+    let movieId: string;
+
+    beforeEach(async () => {
+      const movie = await prisma.movie.create({
+        data: {
+          title: 'Original Title',
+          description: 'Original Description',
+          releaseYear: 2020,
+          rating: 7.0,
+        },
+      });
+      movieId = movie.id;
+    });
+
+    it('should update a movie with all fields', async () => {
+      const updateDto = {
+        title: 'Updated Title',
+        description: 'Updated Description',
+        releaseYear: 2021,
+        rating: 8.0,
+      };
+
+      const response = await request(app.getHttpServer())
+        .put(`/movies/${movieId}`)
+        .send(updateDto)
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        id: movieId,
+        title: updateDto.title,
+        description: updateDto.description,
+        releaseYear: updateDto.releaseYear,
+        rating: updateDto.rating,
+      });
+    });
+
+    it('should update a movie with partial fields', async () => {
+      const updateDto = {
+        title: 'Only Title Updated',
+      };
+
+      const response = await request(app.getHttpServer())
+        .put(`/movies/${movieId}`)
+        .send(updateDto)
+        .expect(200);
+
+      expect(response.body.title).toBe(updateDto.title);
+      // Other fields should remain unchanged (Prisma behavior)
+    });
+  });
+
+  describe('DELETE /movies/:id', () => {
+    let movieId: string;
+
+    beforeEach(async () => {
+      const movie = await prisma.movie.create({
+        data: {
+          title: 'Movie to Delete',
+        },
+      });
+      movieId = movie.id;
+    });
+
+    it('should delete a movie', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/movies/${movieId}`)
+        .expect(200);
+
+      expect(response.body.id).toBe(movieId);
+
+      // Verify it's deleted
+      const deletedMovie = await prisma.movie.findUnique({
+        where: { id: movieId },
+      });
+      expect(deletedMovie).toBeNull();
+    });
+  });
+});
