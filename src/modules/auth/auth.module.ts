@@ -2,17 +2,19 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { PrismaModule } from '../prisma';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { LocalStrategy } from './strategies/local.strategy';
+import { AuthService } from './application';
+import { USER_REPOSITORY } from './domain/repositories';
+import { PrismaUserRepository } from './infrastructure/persistence';
+import {
+  AuthController,
+  JwtAuthGuard,
+  JwtStrategy,
+  LocalStrategy,
+  RolesGuard,
+} from './presentation';
 
 @Module({
   imports: [
-    PrismaModule,
     PassportModule,
     ConfigModule,
     JwtModule.registerAsync({
@@ -31,6 +33,10 @@ import { LocalStrategy } from './strategies/local.strategy';
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
+    {
+      provide: USER_REPOSITORY,
+      useClass: PrismaUserRepository,
+    },
   ],
   exports: [AuthService, JwtAuthGuard, RolesGuard],
 })

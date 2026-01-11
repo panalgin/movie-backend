@@ -15,12 +15,16 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { User } from '@prisma/client';
-import { AuthService } from './auth.service';
+import {
+  AuthResponseDto,
+  AuthService,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+} from '../application';
+import type { User } from '../domain/entities';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
-import { AuthResponseDto, LoginDto, RefreshTokenDto, RegisterDto } from './dto';
-import { UserEntity } from './entities';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Auth')
@@ -36,7 +40,7 @@ export class AuthController {
     description: 'User registered successfully',
     type: AuthResponseDto,
   })
-  @ApiConflictResponse({ description: 'Email already registered' })
+  @ApiConflictResponse({ description: 'Email or username already registered' })
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(dto);
   }
@@ -76,13 +80,14 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Current user info',
-    type: UserEntity,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async me(@CurrentUser() user: User) {
     return {
       id: user.id,
+      username: user.username,
       email: user.email,
+      age: user.age,
       role: user.role,
     };
   }

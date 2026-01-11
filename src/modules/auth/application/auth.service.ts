@@ -1,39 +1,58 @@
 import { randomBytes } from 'node:crypto';
 import {
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ProviderType, type User } from '@prisma/client';
+import { ProviderType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma';
+import { PrismaService } from '../../../shared/infrastructure/prisma';
+import { User, UserRole } from '../domain/entities';
+import type { IUserRepository } from '../domain/repositories';
+import { USER_REPOSITORY } from '../domain/repositories';
 import type { AuthResponseDto, LoginDto, RegisterDto } from './dto';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
-    // Check if user exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
-
-    if (existingUser) {
+    // Check if email exists
+    if (await this.userRepository.existsByEmail(dto.email)) {
       throw new ConflictException('Email already registered');
     }
+
+    // Check if username exists
+    if (await this.userRepository.existsByUsername(dto.username)) {
+      throw new ConflictException('Username already taken');
+    }
+
+    // Create domain user
+    const user = User.create({
+      username: dto.username,
+      email: dto.email,
+      age: dto.age,
+      role: dto.role,
+    });
 
     // Hash password
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    // Create user with auth provider
-    const user = await this.prisma.user.create({
+    // Save user with auth provider using Prisma directly for complex nested create
+    const savedUser = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        age: user.age,
+        role: user.role,
         authProviders: {
           create: {
             provider: ProviderType.LOCAL,
@@ -43,17 +62,21 @@ export class AuthService {
       },
     });
 
-    return this.generateAuthResponse(user);
+    return this.generateAuthResponse(
+      User.reconstitute(savedUser.id, {
+        username: savedUser.username,
+        email: savedUser.email,
+        age: savedUser.age,
+        role: savedUser.role as UserRole,
+        createdAt: savedUser.createdAt,
+        updatedAt: savedUser.updatedAt,
+      }),
+    );
   }
 
   async login(dto: LoginDto): Promise<AuthResponseDto> {
-    const user = await this.validateUser(dto.email, dto.password);
-    return this.generateAuthResponse(user);
-  }
-
-  async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+    const prismaUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
       include: {
         authProviders: {
           where: { provider: ProviderType.LOCAL },
@@ -61,17 +84,17 @@ export class AuthService {
       },
     });
 
-    if (!user || user.authProviders.length === 0) {
+    if (!prismaUser || prismaUser.authProviders.length === 0) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const authProvider = user.authProviders[0];
+    const authProvider = prismaUser.authProviders[0];
     if (!authProvider.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(
-      password,
+      dto.password,
       authProvider.passwordHash,
     );
 
@@ -79,7 +102,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return user;
+    const user = User.reconstitute(prismaUser.id, {
+      username: prismaUser.username,
+      email: prismaUser.email,
+      age: prismaUser.age,
+      role: prismaUser.role as UserRole,
+      createdAt: prismaUser.createdAt,
+      updatedAt: prismaUser.updatedAt,
+    });
+
+    return this.generateAuthResponse(user);
   }
 
   async refreshTokens(refreshToken: string): Promise<AuthResponseDto> {
@@ -100,7 +132,16 @@ export class AuthService {
     // Delete old refresh token
     await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
 
-    return this.generateAuthResponse(storedToken.user);
+    const user = User.reconstitute(storedToken.user.id, {
+      username: storedToken.user.username,
+      email: storedToken.user.email,
+      age: storedToken.user.age,
+      role: storedToken.user.role as UserRole,
+      createdAt: storedToken.user.createdAt,
+      updatedAt: storedToken.user.updatedAt,
+    });
+
+    return this.generateAuthResponse(user);
   }
 
   async logout(userId: string, refreshToken: string): Promise<void> {
@@ -113,13 +154,16 @@ export class AuthService {
   }
 
   async getUserById(userId: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    return this.userRepository.findById(userId);
   }
 
   private async generateAuthResponse(user: User): Promise<AuthResponseDto> {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = randomBytes(32).toString('hex');
@@ -136,7 +180,9 @@ export class AuthService {
     return {
       user: {
         id: user.id,
+        username: user.username,
         email: user.email,
+        age: user.age,
         role: user.role,
       },
       accessToken,
