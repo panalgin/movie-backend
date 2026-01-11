@@ -8,13 +8,13 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import type { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   CreateMovieCommand,
   DeleteMovieCommand,
   UpdateMovieCommand,
 } from './commands';
-import type { CreateMovieDto, UpdateMovieDto } from './dto';
+import { CreateMovieDto, UpdateMovieDto } from './dto';
 import { GetMovieByIdQuery, GetMoviesQuery } from './queries';
 
 @Controller('movies')

@@ -1,6 +1,6 @@
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { Movie } from '../../../generated/prisma';
-import type { PrismaService } from '../../prisma';
+import type { Movie } from '../../generated/prisma/client';
+import { PrismaService } from '../../prisma';
 import { GetMovieByIdQuery } from '../queries';
 
 @QueryHandler(GetMovieByIdQuery)

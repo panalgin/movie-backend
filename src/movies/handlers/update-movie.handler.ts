@@ -1,6 +1,6 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { Movie } from '../../../generated/prisma';
-import type { PrismaService } from '../../prisma';
+import type { Movie } from '../../generated/prisma/client';
+import { PrismaService } from '../../prisma';
 import { UpdateMovieCommand } from '../commands';
 
 @CommandHandler(UpdateMovieCommand)
