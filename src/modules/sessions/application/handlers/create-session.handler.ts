@@ -1,5 +1,6 @@
 import { ConflictException, Inject, NotFoundException } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { Prisma } from '@prisma/client';
 import type { IMovieRepository } from '../../../movies/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
 import { Session } from '../../domain/entities';
@@ -45,6 +46,19 @@ export class CreateSessionHandler
       roomNumber: command.roomNumber,
     });
 
-    return this.sessionRepository.save(session);
+    try {
+      return await this.sessionRepository.save(session);
+    } catch (error) {
+      // Handle unique constraint violation (double-booking at DB level)
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          `Room ${command.roomNumber} is already booked for this time slot on this date`,
+        );
+      }
+      throw error;
+    }
   }
 }
