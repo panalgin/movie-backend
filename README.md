@@ -1,6 +1,6 @@
 # Movie Backend API
 
-NestJS tabanlı, CQRS pattern kullanan bir film yönetim API'si.
+A NestJS-based movie management API using the CQRS pattern.
 
 ## Tech Stack
 
@@ -12,16 +12,16 @@ NestJS tabanlı, CQRS pattern kullanan bir film yönetim API'si.
 - **Linter/Formatter:** Biome
 - **Commit Convention:** Conventional Commits (commitlint + husky)
 
-## Proje Yapısı
+## Project Structure
 
 ```
 src/
-├── main.ts                     # Uygulama entry point
+├── main.ts                     # Application entry point
 ├── app.module.ts               # Root module
 ├── app.controller.ts           # Root controller
 ├── app.service.ts              # Root service
 │
-├── prisma/                     # Prisma modülü
+├── prisma/                     # Prisma module
 │   ├── prisma.module.ts        # Global Prisma module
 │   ├── prisma.service.ts       # PrismaClient wrapper
 │   └── index.ts                # Barrel export
@@ -65,94 +65,94 @@ test/
 
 ## CQRS Pattern
 
-Bu proje CQRS (Command Query Responsibility Segregation) pattern'ini kullanır:
+This project implements the CQRS (Command Query Responsibility Segregation) pattern:
 
-### Commands (Yazma İşlemleri)
-- `CreateMovieCommand` → Yeni film oluşturur
-- `UpdateMovieCommand` → Mevcut filmi günceller
-- `DeleteMovieCommand` → Filmi siler
+### Commands (Write Operations)
+- `CreateMovieCommand` → Creates a new movie
+- `UpdateMovieCommand` → Updates an existing movie
+- `DeleteMovieCommand` → Deletes a movie
 
-### Queries (Okuma İşlemleri)
-- `GetMoviesQuery` → Tüm filmleri listeler (pagination destekli)
-- `GetMovieByIdQuery` → ID'ye göre tek film getirir
+### Queries (Read Operations)
+- `GetMoviesQuery` → Lists all movies (with pagination)
+- `GetMovieByIdQuery` → Retrieves a single movie by ID
 
-### Handler'lar
-Her command/query için ayrı handler sınıfı bulunur. Handler'lar `@nestjs/cqrs` paketinin `CommandBus` ve `QueryBus` servisleri üzerinden çağrılır.
+### Handlers
+Each command/query has a dedicated handler class. Handlers are invoked through the `CommandBus` and `QueryBus` services from the `@nestjs/cqrs` package.
 
-## Kurulum
+## Installation
 
-### Gereksinimler
+### Prerequisites
 - Node.js 22+
 - Yarn
-- Docker (PostgreSQL için)
+- Docker (for PostgreSQL)
 
-### Adımlar
+### Steps
 
-1. **Bağımlılıkları yükle:**
+1. **Install dependencies:**
    ```bash
    yarn install
    ```
 
-2. **PostgreSQL'i başlat:**
+2. **Start PostgreSQL:**
    ```bash
    docker compose up -d
    ```
 
-3. **Environment değişkenlerini ayarla:**
+3. **Set up environment variables:**
    ```bash
-   # .env dosyası oluştur
+   # Create .env file
    echo 'DATABASE_URL="postgresql://postgres:postgres@localhost:5432/movie_db?schema=public"' > .env
    ```
 
-4. **Database migration:**
+4. **Push database schema:**
    ```bash
    yarn db:push
    ```
 
-5. **Uygulamayı başlat:**
+5. **Start the application:**
    ```bash
    yarn start:dev
    ```
 
-## Scriptler
+## Scripts
 
-| Script | Açıklama |
-|--------|----------|
-| `yarn start:dev` | Development modunda başlat (watch) |
-| `yarn start:debug` | Debug modunda başlat |
-| `yarn start:prod` | Production modunda başlat |
-| `yarn build` | Projeyi derle |
-| `yarn db:generate` | Prisma client oluştur |
-| `yarn db:migrate` | Migration oluştur ve uygula |
-| `yarn db:push` | Schema'yı DB'ye push et |
-| `yarn db:studio` | Prisma Studio aç |
-| `yarn lint` | Biome lint çalıştır |
-| `yarn format` | Biome format çalıştır |
+| Script | Description |
+|--------|-------------|
+| `yarn start:dev` | Start in development mode (watch) |
+| `yarn start:debug` | Start in debug mode |
+| `yarn start:prod` | Start in production mode |
+| `yarn build` | Build the project |
+| `yarn db:generate` | Generate Prisma client |
+| `yarn db:migrate` | Create and apply migrations |
+| `yarn db:push` | Push schema to database |
+| `yarn db:studio` | Open Prisma Studio |
+| `yarn lint` | Run Biome linter |
+| `yarn format` | Run Biome formatter |
 | `yarn biome` | Lint + format + import sorting |
-| `yarn test` | Unit testleri çalıştır |
-| `yarn test:e2e` | E2E testleri çalıştır |
+| `yarn test` | Run unit tests |
+| `yarn test:e2e` | Run E2E tests |
 
 ## API Endpoints
 
 ### Movies
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| `GET` | `/movies` | Tüm filmleri listele |
-| `GET` | `/movies/:id` | ID'ye göre film getir |
-| `POST` | `/movies` | Yeni film oluştur |
-| `PUT` | `/movies/:id` | Filmi güncelle |
-| `DELETE` | `/movies/:id` | Filmi sil |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/movies` | List all movies |
+| `GET` | `/movies/:id` | Get movie by ID |
+| `POST` | `/movies` | Create a new movie |
+| `PUT` | `/movies/:id` | Update a movie |
+| `DELETE` | `/movies/:id` | Delete a movie |
 
 ### Query Parameters
 
-`GET /movies` endpoint'i için:
-- `skip` - Atlanacak kayıt sayısı (pagination)
-- `take` - Alınacak kayıt sayısı (pagination)
+For `GET /movies` endpoint:
+- `skip` - Number of records to skip (pagination)
+- `take` - Number of records to take (pagination)
 
-### Request/Response Örnekleri
+### Request/Response Examples
 
-**Film Oluştur:**
+**Create Movie:**
 ```bash
 curl -X POST http://localhost:3000/movies \
   -H "Content-Type: application/json" \
@@ -164,7 +164,7 @@ curl -X POST http://localhost:3000/movies \
   }'
 ```
 
-**Filmleri Listele:**
+**List Movies:**
 ```bash
 curl http://localhost:3000/movies?skip=0&take=10
 ```
@@ -187,22 +187,22 @@ model Movie {
 
 ## Commit Convention
 
-Bu proje [Conventional Commits](https://www.conventionalcommits.org/) kullanır.
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 **Format:** `<type>: <description>`
 
-**Tipler:**
-- `feat` - Yeni özellik
-- `fix` - Bug düzeltme
-- `refactor` - Kod refactoring
-- `docs` - Dokümantasyon
-- `chore` - Bakım işleri
-- `test` - Test ekleme/düzenleme
-- `style` - Kod formatı
-- `perf` - Performans iyileştirme
-- `ci` - CI/CD değişiklikleri
+**Types:**
+- `feat` - New feature
+- `fix` - Bug fix
+- `refactor` - Code refactoring
+- `docs` - Documentation
+- `chore` - Maintenance tasks
+- `test` - Adding/updating tests
+- `style` - Code formatting
+- `perf` - Performance improvements
+- `ci` - CI/CD changes
 
-**Örnek:**
+**Examples:**
 ```bash
 git commit -m "feat: add user authentication"
 git commit -m "fix: resolve login redirect issue"
@@ -211,21 +211,21 @@ git commit -m "fix: resolve login redirect issue"
 ## Development Tools
 
 ### Biome
-ESLint + Prettier alternatifi, tek araçta lint ve format.
+An ESLint + Prettier alternative - lint and format in a single tool.
 
 ```bash
 yarn biome          # check + fix
-yarn lint           # sadece lint
-yarn format         # sadece format
+yarn lint           # lint only
+yarn format         # format only
 ```
 
 ### Husky + Commitlint
-- `pre-commit` → Biome check çalıştırır
-- `commit-msg` → Commit mesajını doğrular
+- `pre-commit` → Runs Biome check
+- `commit-msg` → Validates commit message format
 
 ## Docker
 
-PostgreSQL için docker-compose.yml:
+PostgreSQL docker-compose.yml:
 
 ```yaml
 services:
@@ -245,11 +245,11 @@ volumes:
   postgres_data:
 ```
 
-**Komutlar:**
+**Commands:**
 ```bash
-docker compose up -d    # Başlat
-docker compose down     # Durdur
-docker compose logs -f  # Logları izle
+docker compose up -d    # Start
+docker compose down     # Stop
+docker compose logs -f  # Follow logs
 ```
 
 ## License
