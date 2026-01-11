@@ -1,6 +1,5 @@
 # Movie Backend API
 
-![Coverage](https://img.shields.io/badge/Coverage-58%25-yellow?logo=jest)
 ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
@@ -8,7 +7,17 @@
 ![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?logo=swagger)
 ![License](https://img.shields.io/badge/License-MIT-green?logo=opensourceinitiative)
 
-A NestJS-based movie management API with authentication, role-based access control, and CQRS pattern.
+A NestJS-based movie management API following Domain-Driven Design (DDD) principles with CQRS pattern, role-based access control, and comprehensive testing.
+
+## Features
+
+- **User Registration & Login**: JWT authentication with refresh tokens
+- **Role-Based Access Control**: Manager and Customer roles
+- **Movie Management**: Full CRUD with age restrictions
+- **Session Management**: Time slots with double-booking prevention
+- **Ticket System**: Age verification and purchase validation
+- **Watch History**: Track watched movies with valid tickets
+- **Bulk Operations**: Batch create/delete movies
 
 ## Tech Stack
 
@@ -18,146 +27,180 @@ A NestJS-based movie management API with authentication, role-based access contr
 - **ORM:** Prisma 7.2
 - **Authentication:** JWT + Passport
 - **Documentation:** Swagger/OpenAPI
-- **Pattern:** CQRS (Command Query Responsibility Segregation)
+- **Architecture:** DDD + CQRS
 - **Linter/Formatter:** Biome
-- **Commit Convention:** Conventional Commits (commitlint + husky)
+- **Commit Convention:** Conventional Commits
 
-## Project Structure
+## Project Structure (DDD)
 
 ```
 src/
-├── main.ts                     # Application entry point
-├── app.module.ts               # Root module
-├── app.controller.ts           # Root controller
-├── app.service.ts              # Root service
+├── main.ts
+├── app.module.ts
+├── app.controller.ts
+├── app.service.ts
 │
-├── prisma/                     # Prisma module
-│   ├── prisma.module.ts        # Global Prisma module
-│   ├── prisma.service.ts       # PrismaClient wrapper
-│   └── index.ts
+├── shared/                              # Cross-cutting concerns
+│   ├── domain/
+│   │   ├── base.entity.ts               # Base entity class
+│   │   ├── base.value-object.ts         # Base value object class
+│   │   └── domain.exception.ts          # Domain exceptions
+│   └── infrastructure/
+│       └── prisma/                      # Database layer
 │
-├── auth/                       # Authentication module
-│   ├── auth.module.ts
-│   ├── auth.controller.ts      # /auth endpoints
-│   ├── auth.service.ts         # Auth business logic
-│   ├── decorators/             # @Public, @Roles, @CurrentUser
-│   ├── guards/                 # JwtAuthGuard, RolesGuard
-│   ├── strategies/             # JWT, Local strategies
-│   ├── dto/                    # Auth DTOs
-│   ├── entities/               # User entity
-│   └── index.ts
-│
-└── movies/                     # Movies feature module
-    ├── movies.module.ts
-    ├── movies.controller.ts    # REST controller
-    ├── commands/               # CQRS Commands
-    ├── queries/                # CQRS Queries
-    ├── handlers/               # Command & Query handlers
-    ├── dto/                    # Movie DTOs
-    ├── entities/               # Movie entity
-    └── index.ts
+└── modules/
+    ├── auth/                            # Auth Bounded Context
+    │   ├── application/
+    │   │   ├── dto/                     # RegisterDto, LoginDto, etc.
+    │   │   └── auth.service.ts          # Auth business logic
+    │   ├── domain/
+    │   │   ├── entities/                # User entity
+    │   │   ├── value-objects/           # UserAge
+    │   │   └── repositories/            # IUserRepository
+    │   ├── infrastructure/
+    │   │   └── persistence/             # PrismaUserRepository
+    │   └── presentation/
+    │       ├── auth.controller.ts
+    │       ├── decorators/              # @Public, @Roles, @CurrentUser
+    │       ├── guards/                  # JwtAuthGuard, RolesGuard
+    │       └── strategies/              # JWT, Local strategies
+    │
+    ├── movies/                          # Movies Bounded Context
+    │   ├── application/
+    │   │   ├── commands/                # CreateMovie, UpdateMovie, etc.
+    │   │   ├── queries/                 # GetMovies, GetMovieById
+    │   │   ├── handlers/                # CQRS handlers
+    │   │   └── dto/
+    │   ├── domain/
+    │   │   ├── entities/                # Movie entity
+    │   │   ├── value-objects/           # TimeSlot, AgeRestriction
+    │   │   └── repositories/            # IMovieRepository
+    │   ├── infrastructure/
+    │   │   └── persistence/             # PrismaMovieRepository
+    │   └── presentation/
+    │       └── movies.controller.ts
+    │
+    ├── sessions/                        # Sessions Bounded Context
+    │   ├── application/
+    │   ├── domain/
+    │   ├── infrastructure/
+    │   └── presentation/
+    │
+    ├── tickets/                         # Tickets Bounded Context
+    │   ├── application/
+    │   ├── domain/
+    │   ├── infrastructure/
+    │   └── presentation/
+    │
+    └── watch/                           # Watch History Bounded Context
+        ├── application/
+        ├── domain/
+        ├── infrastructure/
+        └── presentation/
 ```
 
 ## API Documentation
 
-Swagger UI is available at: **http://localhost:3000/swagger**
-
-OpenAPI JSON: **http://localhost:3000/swagger-json**
-
-## API Versioning
-
-This API uses granular endpoint versioning:
-
-```
-/auth/register/v1    # Auth endpoints: /auth/{action}/v1
-/movies/v1           # REST endpoints: /resource/v1
-/movies/v1/:id
-```
-
-When a breaking change is introduced to an endpoint's signature, a new version (v2) will be released while v1 remains available.
+Swagger UI: **http://localhost:3000/swagger**
 
 ## API Endpoints
 
 ### Auth
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/auth/register/v1` | Public | Register new user |
-| `POST` | `/auth/login/v1` | Public | Login with email/password |
-| `POST` | `/auth/refresh/v1` | Public | Refresh access token |
-| `GET` | `/auth/me/v1` | JWT | Get current user info |
-| `POST` | `/auth/logout/v1` | JWT | Logout and invalidate refresh token |
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| `POST` | `/auth/register/v1` | Public | - | Register new user |
+| `POST` | `/auth/login/v1` | Public | - | Login |
+| `POST` | `/auth/refresh/v1` | Public | - | Refresh tokens |
+| `GET` | `/auth/me/v1` | JWT | All | Get current user |
+| `POST` | `/auth/logout/v1` | JWT | All | Logout |
 
 ### Movies
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/movies/v1` | Public | List all movies |
-| `GET` | `/movies/v1/:id` | Public | Get movie by ID |
-| `POST` | `/movies/v1` | Admin | Create a new movie |
-| `PUT` | `/movies/v1/:id` | Admin | Update a movie |
-| `DELETE` | `/movies/v1/:id` | Admin | Delete a movie |
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| `GET` | `/movies/v1` | Public | - | List movies (with filtering/sorting) |
+| `GET` | `/movies/v1/:id` | Public | - | Get movie by ID |
+| `POST` | `/movies/v1` | JWT | Manager | Create movie |
+| `PUT` | `/movies/v1/:id` | JWT | Manager | Update movie |
+| `DELETE` | `/movies/v1/:id` | JWT | Manager | Delete movie |
+| `POST` | `/movies/v1/bulk` | JWT | Manager | Bulk create movies |
+| `DELETE` | `/movies/v1/bulk` | JWT | Manager | Bulk delete movies |
 
-### Query Parameters
+### Sessions
 
-For `GET /movies/v1`:
-- `skip` - Number of records to skip (pagination)
-- `take` - Number of records to take (pagination)
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| `GET` | `/sessions/v1` | Public | - | List sessions |
+| `GET` | `/sessions/v1/:id` | Public | - | Get session by ID |
+| `POST` | `/sessions/v1` | JWT | Manager | Create session |
+| `DELETE` | `/sessions/v1/:id` | JWT | Manager | Delete session |
 
-## Authentication
+### Tickets
 
-### JWT Bearer Token
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| `POST` | `/tickets/v1` | JWT | Customer | Buy ticket |
+| `GET` | `/tickets/v1/my` | JWT | Customer | Get my tickets |
+| `GET` | `/tickets/v1/:id` | JWT | Customer | Get ticket by ID |
 
-1. Register or login to get `accessToken` and `refreshToken`
-2. Use `Authorization: Bearer <accessToken>` header for protected routes
-3. Access token expires in 15 minutes
-4. Use `/auth/refresh/v1` with refresh token to get new tokens
+### Watch
 
-### Roles
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| `POST` | `/watch/v1` | JWT | Customer | Watch movie |
+| `GET` | `/watch/v1/history` | JWT | Customer | Get watch history |
 
-- **USER** - Default role, can view movies
-- **ADMIN** - Can create, update, delete movies
+## Query Parameters
 
-### Request Examples
+### Movies (`GET /movies/v1`)
 
-**Register:**
-```bash
-curl -X POST http://localhost:3000/auth/register/v1 \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "password123"}'
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `skip` | number | Pagination offset |
+| `take` | number | Pagination limit |
+| `sortBy` | string | Sort by: `title`, `ageRestriction`, `createdAt` |
+| `sortOrder` | string | Sort order: `asc`, `desc` |
+| `maxAgeRestriction` | number | Filter by max age restriction |
 
-**Login:**
-```bash
-curl -X POST http://localhost:3000/auth/login/v1 \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "password123"}'
-```
+### Sessions (`GET /sessions/v1`)
 
-**Create Movie (Admin):**
-```bash
-curl -X POST http://localhost:3000/movies/v1 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <accessToken>" \
-  -d '{"title": "Inception", "releaseYear": 2010, "rating": 8.8}'
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `movieId` | uuid | Filter by movie |
+| `date` | date | Filter by date |
+| `roomNumber` | number | Filter by room |
 
-## CQRS Pattern
+## Time Slots
 
-This project implements the CQRS (Command Query Responsibility Segregation) pattern:
+Sessions use predefined time slots:
 
-### Commands (Write Operations)
-- `CreateMovieCommand` → Creates a new movie
-- `UpdateMovieCommand` → Updates an existing movie
-- `DeleteMovieCommand` → Deletes a movie
+| Slot | Time |
+|------|------|
+| `SLOT_10_12` | 10:00-12:00 |
+| `SLOT_12_14` | 12:00-14:00 |
+| `SLOT_14_16` | 14:00-16:00 |
+| `SLOT_16_18` | 16:00-18:00 |
+| `SLOT_18_20` | 18:00-20:00 |
+| `SLOT_20_22` | 20:00-22:00 |
+| `SLOT_22_00` | 22:00-00:00 |
 
-### Queries (Read Operations)
-- `GetMoviesQuery` → Lists all movies (with pagination)
-- `GetMovieByIdQuery` → Retrieves a single movie by ID
+## Roles
+
+- **MANAGER**: Can manage movies and sessions
+- **CUSTOMER**: Can buy tickets and watch movies
+
+## Business Rules
+
+1. **Age Restriction**: Users cannot buy tickets for movies with age restriction higher than their age
+2. **Double-Booking Prevention**: Same room cannot be booked for the same date and time slot
+3. **Ticket Validation**: Users can only watch movies they have tickets for
+4. **Past Session Prevention**: Cannot buy tickets for past sessions
 
 ## Installation
 
 ### Prerequisites
+
 - Node.js 22+
 - Yarn
 - Docker (for PostgreSQL)
@@ -177,7 +220,6 @@ This project implements the CQRS (Command Query Responsibility Segregation) patt
 3. **Set up environment variables:**
    ```bash
    cp .env.example .env
-   # Edit .env with your values
    ```
    
    Required variables:
@@ -205,48 +247,57 @@ This project implements the CQRS (Command Query Responsibility Segregation) patt
 
 ```prisma
 enum Role {
-  USER
-  ADMIN
+  MANAGER
+  CUSTOMER
 }
 
-enum ProviderType {
-  LOCAL
-  GOOGLE
-  APPLE
+enum TimeSlot {
+  SLOT_10_12
+  SLOT_12_14
+  SLOT_14_16
+  SLOT_16_18
+  SLOT_18_20
+  SLOT_20_22
+  SLOT_22_00
 }
 
 model User {
-  id               String         @id @default(uuid())
-  email            String         @unique
-  role             Role           @default(USER)
-  twoFactorEnabled Boolean        @default(false)
-  authProviders    AuthProvider[]
-  refreshTokens    RefreshToken[]
-}
-
-model AuthProvider {
-  id           String       @id @default(uuid())
-  userId       String
-  provider     ProviderType
-  providerId   String?
-  passwordHash String?
-}
-
-model RefreshToken {
   id        String   @id @default(uuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
+  username  String   @unique
+  email     String   @unique
+  age       Int
+  role      Role     @default(CUSTOMER)
+  // ... relations
 }
 
 model Movie {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  releaseYear Int?
-  rating      Float?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String    @id @default(uuid())
+  title          String
+  description    String?
+  ageRestriction Int       @default(0)
+  sessions       Session[]
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  movieId    String
+  date       DateTime
+  timeSlot   TimeSlot
+  roomNumber Int
+  @@unique([date, timeSlot, roomNumber])
+}
+
+model Ticket {
+  id        String @id @default(uuid())
+  userId    String
+  sessionId String
+  @@unique([userId, sessionId])
+}
+
+model WatchHistory {
+  id      String   @id @default(uuid())
+  userId  String
+  movieId String
 }
 ```
 
@@ -254,77 +305,53 @@ model Movie {
 
 | Script | Description |
 |--------|-------------|
-| `yarn start:dev` | Start in development mode (watch) |
-| `yarn start:debug` | Start in debug mode |
+| `yarn start:dev` | Start in development mode |
 | `yarn start:prod` | Start in production mode |
 | `yarn build` | Build the project |
 | `yarn db:generate` | Generate Prisma client |
 | `yarn db:migrate` | Create and apply migrations |
 | `yarn db:push` | Push schema to database |
 | `yarn db:studio` | Open Prisma Studio |
-| `yarn lint` | Run Biome linter |
-| `yarn format` | Run Biome formatter |
-| `yarn biome` | Lint + format + import sorting |
 | `yarn test` | Run unit tests |
-| `yarn test:watch` | Run unit tests in watch mode |
-| `yarn test:cov` | Run unit tests with coverage |
-| `yarn test:e2e` | Run E2E tests (requires test database) |
+| `yarn test:e2e` | Run E2E tests |
+| `yarn test:cov` | Run tests with coverage |
+| `yarn biome` | Lint + format |
 
 ## Testing
 
 ### Unit Tests
 ```bash
-yarn test           # Run once
-yarn test:watch     # Watch mode
-yarn test:cov       # With coverage
+yarn test
 ```
 
 ### E2E Tests
 ```bash
-# Start test database
 docker compose up -d movie-db-test
-
-# Run E2E tests
 yarn test:e2e
 ```
 
-## Docker
+## Architecture Decisions
 
-```yaml
-services:
-  movie-db:
-    image: postgres:16-alpine
-    ports:
-      - '5432:5432'
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: movie_db
+### Domain-Driven Design (DDD)
 
-  movie-db-test:
-    image: postgres:16-alpine
-    ports:
-      - '5433:5432'
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: movie_db_test
-```
+- **Bounded Contexts**: Auth, Movies, Sessions, Tickets, Watch
+- **Rich Domain Models**: Entities with business logic
+- **Value Objects**: TimeSlot, AgeRestriction, UserAge
+- **Repository Pattern**: Abstract persistence layer
 
-**Commands:**
-```bash
-docker compose up -d    # Start all
-docker compose down     # Stop all
-```
+### CQRS Pattern
 
-## Commit Convention
+- **Commands**: Write operations (CreateMovie, BuyTicket, etc.)
+- **Queries**: Read operations (GetMovies, GetWatchHistory, etc.)
+- **Handlers**: Process commands and queries
 
-This project uses [Conventional Commits](https://www.conventionalcommits.org/).
+### Layered Architecture
 
-**Format:** `<type>: <description>`
-
-**Types:** `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `style`, `perf`, `ci`
+- **Presentation**: Controllers, DTOs
+- **Application**: Commands, Queries, Handlers
+- **Domain**: Entities, Value Objects, Repository Interfaces
+- **Infrastructure**: Repository Implementations, Database
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT
