@@ -1,11 +1,11 @@
 import { Test, type TestingModule } from '@nestjs/testing';
+import {
+  createMockPrismaService,
+  type MockPrismaService,
+} from '../../../test/mocks';
 import { PrismaService } from '../../prisma';
 import { GetMovieByIdQuery } from '../queries';
 import { GetMovieByIdHandler } from './get-movie-by-id.handler';
-import {
-  type MockPrismaService,
-  createMockPrismaService,
-} from '../../../test/mocks';
 
 describe('GetMovieByIdHandler', () => {
   let handler: GetMovieByIdHandler;

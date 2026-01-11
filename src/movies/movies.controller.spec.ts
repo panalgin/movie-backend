@@ -1,12 +1,12 @@
-import { Test, type TestingModule } from '@nestjs/testing';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { MoviesController } from './movies.controller';
+import { Test, type TestingModule } from '@nestjs/testing';
 import {
   CreateMovieCommand,
-  UpdateMovieCommand,
   DeleteMovieCommand,
+  UpdateMovieCommand,
 } from './commands';
-import { GetMoviesQuery, GetMovieByIdQuery } from './queries';
+import { MoviesController } from './movies.controller';
+import { GetMovieByIdQuery, GetMoviesQuery } from './queries';
 
 describe('MoviesController', () => {
   let controller: MoviesController;
