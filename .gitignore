@@ -48,3 +48,5 @@ Thumbs.db
 # Misc
 *.tsbuildinfo
 .eslintcache
+
+/generated/prisma
