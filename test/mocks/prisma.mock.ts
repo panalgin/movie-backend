@@ -1,5 +1,3 @@
-import type { PrismaService } from '../../src/prisma';
-
 export type MockPrismaService = {
   movie: {
     create: jest.Mock;

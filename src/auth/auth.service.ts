@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   ConflictException,
   Injectable,
@@ -6,7 +7,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ProviderType, type User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma';
 import type { AuthResponseDto, LoginDto, RegisterDto } from './dto';
 

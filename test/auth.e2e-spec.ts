@@ -231,12 +231,10 @@ describe('Auth (e2e)', () => {
       userToken = userResponse.body.accessToken;
 
       // Create admin user
-      const adminResponse = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: 'admin@example.com',
-          password: 'password123',
-        });
+      await request(app.getHttpServer()).post('/auth/register').send({
+        email: 'admin@example.com',
+        password: 'password123',
+      });
 
       // Update to admin role directly in DB
       await prisma.user.update({

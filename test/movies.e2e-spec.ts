@@ -34,12 +34,10 @@ describe('Movies (e2e)', () => {
     await prisma.authProvider.deleteMany();
     await prisma.user.deleteMany();
 
-    const registerResponse = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'admin@test.com',
-        password: 'password123',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'admin@test.com',
+      password: 'password123',
+    });
 
     await prisma.user.update({
       where: { email: 'admin@test.com' },
