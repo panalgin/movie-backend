@@ -1,5 +1,5 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { Movie } from '../../generated/prisma/client';
+import type { Movie } from '@prisma/client';
 import { PrismaService } from '../../prisma';
 import { DeleteMovieCommand } from '../commands';
 
