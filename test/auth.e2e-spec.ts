@@ -44,10 +44,10 @@ describe('Auth (e2e)', () => {
     await app.close();
   });
 
-  describe('POST /auth/register', () => {
+  describe('POST /auth/register/v1', () => {
     it('should register a new user', async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/auth/register/v1')
         .send({
           email: 'test@example.com',
           password: 'password123',
@@ -63,14 +63,14 @@ describe('Auth (e2e)', () => {
 
     it('should return 409 for duplicate email', async () => {
       // First registration
-      await request(app.getHttpServer()).post('/auth/register').send({
+      await request(app.getHttpServer()).post('/auth/register/v1').send({
         email: 'duplicate@example.com',
         password: 'password123',
       });
 
       // Second registration with same email
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/auth/register/v1')
         .send({
           email: 'duplicate@example.com',
           password: 'password456',
@@ -82,7 +82,7 @@ describe('Auth (e2e)', () => {
 
     it('should return 400 for invalid email', async () => {
       await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/auth/register/v1')
         .send({
           email: 'invalid-email',
           password: 'password123',
@@ -92,7 +92,7 @@ describe('Auth (e2e)', () => {
 
     it('should return 400 for short password', async () => {
       await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/auth/register/v1')
         .send({
           email: 'test@example.com',
           password: 'short',
@@ -101,10 +101,10 @@ describe('Auth (e2e)', () => {
     });
   });
 
-  describe('POST /auth/login', () => {
+  describe('POST /auth/login/v1', () => {
     beforeEach(async () => {
       // Register a user first
-      await request(app.getHttpServer()).post('/auth/register').send({
+      await request(app.getHttpServer()).post('/auth/register/v1').send({
         email: 'login@example.com',
         password: 'password123',
       });
@@ -112,7 +112,7 @@ describe('Auth (e2e)', () => {
 
     it('should login with valid credentials', async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/auth/login/v1')
         .send({
           email: 'login@example.com',
           password: 'password123',
@@ -127,7 +127,7 @@ describe('Auth (e2e)', () => {
 
     it('should return 401 for wrong password', async () => {
       await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/auth/login/v1')
         .send({
           email: 'login@example.com',
           password: 'wrongpassword',
@@ -137,7 +137,7 @@ describe('Auth (e2e)', () => {
 
     it('should return 401 for non-existent user', async () => {
       await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/auth/login/v1')
         .send({
           email: 'nonexistent@example.com',
           password: 'password123',
@@ -146,12 +146,12 @@ describe('Auth (e2e)', () => {
     });
   });
 
-  describe('GET /auth/me', () => {
+  describe('GET /auth/me/v1', () => {
     let accessToken: string;
 
     beforeEach(async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/auth/register/v1')
         .send({
           email: 'me@example.com',
           password: 'password123',
@@ -162,7 +162,7 @@ describe('Auth (e2e)', () => {
 
     it('should return current user with valid token', async () => {
       const response = await request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/auth/me/v1')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
@@ -171,23 +171,23 @@ describe('Auth (e2e)', () => {
     });
 
     it('should return 401 without token', async () => {
-      await request(app.getHttpServer()).get('/auth/me').expect(401);
+      await request(app.getHttpServer()).get('/auth/me/v1').expect(401);
     });
 
     it('should return 401 with invalid token', async () => {
       await request(app.getHttpServer())
-        .get('/auth/me')
+        .get('/auth/me/v1')
         .set('Authorization', 'Bearer invalid-token')
         .expect(401);
     });
   });
 
-  describe('POST /auth/refresh', () => {
+  describe('POST /auth/refresh/v1', () => {
     let refreshToken: string;
 
     beforeEach(async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/auth/register/v1')
         .send({
           email: 'refresh@example.com',
           password: 'password123',
@@ -198,7 +198,7 @@ describe('Auth (e2e)', () => {
 
     it('should return new tokens with valid refresh token', async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/auth/refresh/v1')
         .send({ refreshToken })
         .expect(200);
 
@@ -210,7 +210,7 @@ describe('Auth (e2e)', () => {
 
     it('should return 401 with invalid refresh token', async () => {
       await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/auth/refresh/v1')
         .send({ refreshToken: 'invalid-token' })
         .expect(401);
     });
@@ -223,7 +223,7 @@ describe('Auth (e2e)', () => {
     beforeEach(async () => {
       // Create regular user
       const userResponse = await request(app.getHttpServer())
-        .post('/auth/register')
+        .post('/auth/register/v1')
         .send({
           email: 'user@example.com',
           password: 'password123',
@@ -231,7 +231,7 @@ describe('Auth (e2e)', () => {
       userToken = userResponse.body.accessToken;
 
       // Create admin user
-      await request(app.getHttpServer()).post('/auth/register').send({
+      await request(app.getHttpServer()).post('/auth/register/v1').send({
         email: 'admin@example.com',
         password: 'password123',
       });
@@ -244,7 +244,7 @@ describe('Auth (e2e)', () => {
 
       // Re-login to get token with admin role
       const adminLoginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
+        .post('/auth/login/v1')
         .send({
           email: 'admin@example.com',
           password: 'password123',
@@ -252,16 +252,16 @@ describe('Auth (e2e)', () => {
       adminToken = adminLoginResponse.body.accessToken;
     });
 
-    describe('GET /movies (Public)', () => {
+    describe('GET /movies/v1 (Public)', () => {
       it('should allow access without authentication', async () => {
-        await request(app.getHttpServer()).get('/movies').expect(200);
+        await request(app.getHttpServer()).get('/movies/v1').expect(200);
       });
     });
 
-    describe('POST /movies (Admin only)', () => {
+    describe('POST /movies/v1 (Admin only)', () => {
       it('should allow admin to create movie', async () => {
         await request(app.getHttpServer())
-          .post('/movies')
+          .post('/movies/v1')
           .set('Authorization', `Bearer ${adminToken}`)
           .send({ title: 'Test Movie' })
           .expect(201);
@@ -269,7 +269,7 @@ describe('Auth (e2e)', () => {
 
       it('should deny regular user from creating movie', async () => {
         await request(app.getHttpServer())
-          .post('/movies')
+          .post('/movies/v1')
           .set('Authorization', `Bearer ${userToken}`)
           .send({ title: 'Test Movie' })
           .expect(403);
@@ -277,13 +277,13 @@ describe('Auth (e2e)', () => {
 
       it('should deny unauthenticated user from creating movie', async () => {
         await request(app.getHttpServer())
-          .post('/movies')
+          .post('/movies/v1')
           .send({ title: 'Test Movie' })
           .expect(401);
       });
     });
 
-    describe('DELETE /movies/:id (Admin only)', () => {
+    describe('DELETE /movies/v1/:id (Admin only)', () => {
       let movieId: string;
 
       beforeEach(async () => {
@@ -299,14 +299,14 @@ describe('Auth (e2e)', () => {
 
       it('should allow admin to delete movie', async () => {
         await request(app.getHttpServer())
-          .delete(`/movies/${movieId}`)
+          .delete(`/movies/v1/${movieId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
       });
 
       it('should deny regular user from deleting movie', async () => {
         await request(app.getHttpServer())
-          .delete(`/movies/${movieId}`)
+          .delete(`/movies/v1/${movieId}`)
           .set('Authorization', `Bearer ${userToken}`)
           .expect(403);
       });

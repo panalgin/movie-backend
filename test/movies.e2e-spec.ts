@@ -34,7 +34,7 @@ describe('Movies (e2e)', () => {
     await prisma.authProvider.deleteMany();
     await prisma.user.deleteMany();
 
-    await request(app.getHttpServer()).post('/auth/register').send({
+    await request(app.getHttpServer()).post('/auth/register/v1').send({
       email: 'admin@test.com',
       password: 'password123',
     });
@@ -46,7 +46,7 @@ describe('Movies (e2e)', () => {
 
     // Re-login to get token with admin role
     const loginResponse = await request(app.getHttpServer())
-      .post('/auth/login')
+      .post('/auth/login/v1')
       .send({
         email: 'admin@test.com',
         password: 'password123',
@@ -70,7 +70,7 @@ describe('Movies (e2e)', () => {
     await app.close();
   });
 
-  describe('POST /movies', () => {
+  describe('POST /movies/v1', () => {
     it('should create a movie with all fields (admin)', async () => {
       const createDto = {
         title: 'Inception',
@@ -80,7 +80,7 @@ describe('Movies (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .post('/movies')
+        .post('/movies/v1')
         .set('Authorization', `Bearer ${adminToken}`)
         .send(createDto)
         .expect(201);
@@ -102,7 +102,7 @@ describe('Movies (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .post('/movies')
+        .post('/movies/v1')
         .set('Authorization', `Bearer ${adminToken}`)
         .send(createDto)
         .expect(201);
@@ -115,13 +115,13 @@ describe('Movies (e2e)', () => {
 
     it('should return 401 without authentication', async () => {
       await request(app.getHttpServer())
-        .post('/movies')
+        .post('/movies/v1')
         .send({ title: 'Test Movie' })
         .expect(401);
     });
   });
 
-  describe('GET /movies', () => {
+  describe('GET /movies/v1', () => {
     beforeEach(async () => {
       // Create test movies
       await prisma.movie.createMany({
@@ -135,7 +135,7 @@ describe('Movies (e2e)', () => {
 
     it('should return all movies (public)', async () => {
       const response = await request(app.getHttpServer())
-        .get('/movies')
+        .get('/movies/v1')
         .expect(200);
 
       expect(response.body).toHaveLength(3);
@@ -143,7 +143,7 @@ describe('Movies (e2e)', () => {
 
     it('should return movies with pagination (skip)', async () => {
       const response = await request(app.getHttpServer())
-        .get('/movies?skip=1')
+        .get('/movies/v1?skip=1')
         .expect(200);
 
       expect(response.body).toHaveLength(2);
@@ -151,7 +151,7 @@ describe('Movies (e2e)', () => {
 
     it('should return movies with pagination (take)', async () => {
       const response = await request(app.getHttpServer())
-        .get('/movies?take=2')
+        .get('/movies/v1?take=2')
         .expect(200);
 
       expect(response.body).toHaveLength(2);
@@ -159,7 +159,7 @@ describe('Movies (e2e)', () => {
 
     it('should return movies with pagination (skip + take)', async () => {
       const response = await request(app.getHttpServer())
-        .get('/movies?skip=1&take=1')
+        .get('/movies/v1?skip=1&take=1')
         .expect(200);
 
       expect(response.body).toHaveLength(1);
@@ -169,14 +169,14 @@ describe('Movies (e2e)', () => {
       await prisma.movie.deleteMany();
 
       const response = await request(app.getHttpServer())
-        .get('/movies')
+        .get('/movies/v1')
         .expect(200);
 
       expect(response.body).toEqual([]);
     });
   });
 
-  describe('GET /movies/:id', () => {
+  describe('GET /movies/v1/:id', () => {
     let movieId: string;
 
     beforeEach(async () => {
@@ -193,7 +193,7 @@ describe('Movies (e2e)', () => {
 
     it('should return a movie by id (public)', async () => {
       const response = await request(app.getHttpServer())
-        .get(`/movies/${movieId}`)
+        .get(`/movies/v1/${movieId}`)
         .expect(200);
 
       expect(response.body).toMatchObject({
@@ -207,14 +207,14 @@ describe('Movies (e2e)', () => {
 
     it('should return null for non-existent movie', async () => {
       const response = await request(app.getHttpServer())
-        .get('/movies/non-existent-uuid')
+        .get('/movies/v1/non-existent-uuid')
         .expect(200);
 
       expect(response.body).toEqual({});
     });
   });
 
-  describe('PUT /movies/:id', () => {
+  describe('PUT /movies/v1/:id', () => {
     let movieId: string;
 
     beforeEach(async () => {
@@ -238,7 +238,7 @@ describe('Movies (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .put(`/movies/${movieId}`)
+        .put(`/movies/v1/${movieId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send(updateDto)
         .expect(200);
@@ -258,7 +258,7 @@ describe('Movies (e2e)', () => {
       };
 
       const response = await request(app.getHttpServer())
-        .put(`/movies/${movieId}`)
+        .put(`/movies/v1/${movieId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send(updateDto)
         .expect(200);
@@ -268,13 +268,13 @@ describe('Movies (e2e)', () => {
 
     it('should return 401 without authentication', async () => {
       await request(app.getHttpServer())
-        .put(`/movies/${movieId}`)
+        .put(`/movies/v1/${movieId}`)
         .send({ title: 'New Title' })
         .expect(401);
     });
   });
 
-  describe('DELETE /movies/:id', () => {
+  describe('DELETE /movies/v1/:id', () => {
     let movieId: string;
 
     beforeEach(async () => {
@@ -288,7 +288,7 @@ describe('Movies (e2e)', () => {
 
     it('should delete a movie (admin)', async () => {
       const response = await request(app.getHttpServer())
-        .delete(`/movies/${movieId}`)
+        .delete(`/movies/v1/${movieId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -303,7 +303,7 @@ describe('Movies (e2e)', () => {
 
     it('should return 401 without authentication', async () => {
       await request(app.getHttpServer())
-        .delete(`/movies/${movieId}`)
+        .delete(`/movies/v1/${movieId}`)
         .expect(401);
     });
   });
