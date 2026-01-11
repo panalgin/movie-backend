@@ -18,6 +18,7 @@ import {
     PassportModule,
     ConfigModule,
     JwtModule.registerAsync({
+      global: true,
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'super-secret-key',
