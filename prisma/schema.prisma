@@ -6,6 +6,58 @@ datasource db {
   provider = "postgresql"
 }
 
+// Enums
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ProviderType {
+  LOCAL
+  GOOGLE
+  APPLE
+}
+
+// Models
+model User {
+  id               String         @id @default(uuid())
+  email            String         @unique
+  role             Role           @default(USER)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  twoFactorEnabled Boolean        @default(false)
+  twoFactorSecret  String?
+  authProviders    AuthProvider[]
+  refreshTokens    RefreshToken[]
+
+  @@map("users")
+}
+
+model AuthProvider {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     ProviderType
+  providerId   String?
+  passwordHash String?
+  createdAt    DateTime     @default(now())
+
+  @@unique([provider, providerId])
+  @@unique([userId, provider])
+  @@map("auth_providers")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
 model Movie {
   id          String   @id @default(uuid())
   title       String

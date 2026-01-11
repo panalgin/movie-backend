@@ -1,5 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { Role } from '@prisma/client';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -8,7 +10,7 @@ import { PrismaService } from '../src/prisma';
 describe('Movies (e2e)', () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
-  let createdMovieId: string;
+  let adminToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -16,8 +18,43 @@ describe('Movies (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+
     prisma = moduleFixture.get<PrismaService>(PrismaService);
     await app.init();
+
+    // Create admin user for tests that require authentication
+    await prisma.refreshToken.deleteMany();
+    await prisma.authProvider.deleteMany();
+    await prisma.user.deleteMany();
+
+    const registerResponse = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'admin@test.com',
+        password: 'password123',
+      });
+
+    await prisma.user.update({
+      where: { email: 'admin@test.com' },
+      data: { role: Role.ADMIN },
+    });
+
+    // Re-login to get token with admin role
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email: 'admin@test.com',
+        password: 'password123',
+      });
+
+    adminToken = loginResponse.body.accessToken;
   });
 
   beforeEach(async () => {
@@ -28,12 +65,15 @@ describe('Movies (e2e)', () => {
   afterAll(async () => {
     // Clean up and close
     await prisma.movie.deleteMany();
+    await prisma.refreshToken.deleteMany();
+    await prisma.authProvider.deleteMany();
+    await prisma.user.deleteMany();
     await prisma.$disconnect();
     await app.close();
   });
 
   describe('POST /movies', () => {
-    it('should create a movie with all fields', async () => {
+    it('should create a movie with all fields (admin)', async () => {
       const createDto = {
         title: 'Inception',
         description: 'A mind-bending thriller',
@@ -43,6 +83,7 @@ describe('Movies (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/movies')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(createDto)
         .expect(201);
 
@@ -55,17 +96,16 @@ describe('Movies (e2e)', () => {
       expect(response.body.id).toBeDefined();
       expect(response.body.createdAt).toBeDefined();
       expect(response.body.updatedAt).toBeDefined();
-
-      createdMovieId = response.body.id;
     });
 
-    it('should create a movie with only title', async () => {
+    it('should create a movie with only title (admin)', async () => {
       const createDto = {
         title: 'The Matrix',
       };
 
       const response = await request(app.getHttpServer())
         .post('/movies')
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(createDto)
         .expect(201);
 
@@ -73,6 +113,13 @@ describe('Movies (e2e)', () => {
       expect(response.body.description).toBeNull();
       expect(response.body.releaseYear).toBeNull();
       expect(response.body.rating).toBeNull();
+    });
+
+    it('should return 401 without authentication', async () => {
+      await request(app.getHttpServer())
+        .post('/movies')
+        .send({ title: 'Test Movie' })
+        .expect(401);
     });
   });
 
@@ -88,7 +135,7 @@ describe('Movies (e2e)', () => {
       });
     });
 
-    it('should return all movies', async () => {
+    it('should return all movies (public)', async () => {
       const response = await request(app.getHttpServer())
         .get('/movies')
         .expect(200);
@@ -146,7 +193,7 @@ describe('Movies (e2e)', () => {
       movieId = movie.id;
     });
 
-    it('should return a movie by id', async () => {
+    it('should return a movie by id (public)', async () => {
       const response = await request(app.getHttpServer())
         .get(`/movies/${movieId}`)
         .expect(200);
@@ -184,7 +231,7 @@ describe('Movies (e2e)', () => {
       movieId = movie.id;
     });
 
-    it('should update a movie with all fields', async () => {
+    it('should update a movie with all fields (admin)', async () => {
       const updateDto = {
         title: 'Updated Title',
         description: 'Updated Description',
@@ -194,6 +241,7 @@ describe('Movies (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .put(`/movies/${movieId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(updateDto)
         .expect(200);
 
@@ -206,18 +254,25 @@ describe('Movies (e2e)', () => {
       });
     });
 
-    it('should update a movie with partial fields', async () => {
+    it('should update a movie with partial fields (admin)', async () => {
       const updateDto = {
         title: 'Only Title Updated',
       };
 
       const response = await request(app.getHttpServer())
         .put(`/movies/${movieId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send(updateDto)
         .expect(200);
 
       expect(response.body.title).toBe(updateDto.title);
-      // Other fields should remain unchanged (Prisma behavior)
+    });
+
+    it('should return 401 without authentication', async () => {
+      await request(app.getHttpServer())
+        .put(`/movies/${movieId}`)
+        .send({ title: 'New Title' })
+        .expect(401);
     });
   });
 
@@ -233,9 +288,10 @@ describe('Movies (e2e)', () => {
       movieId = movie.id;
     });
 
-    it('should delete a movie', async () => {
+    it('should delete a movie (admin)', async () => {
       const response = await request(app.getHttpServer())
         .delete(`/movies/${movieId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.id).toBe(movieId);
@@ -245,6 +301,12 @@ describe('Movies (e2e)', () => {
         where: { id: movieId },
       });
       expect(deletedMovie).toBeNull();
+    });
+
+    it('should return 401 without authentication', async () => {
+      await request(app.getHttpServer())
+        .delete(`/movies/${movieId}`)
+        .expect(401);
     });
   });
 });
