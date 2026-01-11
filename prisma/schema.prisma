@@ -8,8 +8,8 @@ datasource db {
 
 // Enums
 enum Role {
-  USER
-  ADMIN
+  MANAGER
+  CUSTOMER
 }
 
 enum ProviderType {
@@ -18,17 +18,31 @@ enum ProviderType {
   APPLE
 }
 
+enum TimeSlot {
+  SLOT_10_12 // 10:00-12:00
+  SLOT_12_14 // 12:00-14:00
+  SLOT_14_16 // 14:00-16:00
+  SLOT_16_18 // 16:00-18:00
+  SLOT_18_20 // 18:00-20:00
+  SLOT_20_22 // 20:00-22:00
+  SLOT_22_00 // 22:00-00:00
+}
+
 // Models
 model User {
   id               String         @id @default(uuid())
+  username         String         @unique
   email            String         @unique
-  role             Role           @default(USER)
+  age              Int
+  role             Role           @default(CUSTOMER)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   twoFactorEnabled Boolean        @default(false)
   twoFactorSecret  String?
   authProviders    AuthProvider[]
   refreshTokens    RefreshToken[]
+  tickets          Ticket[]
+  watchHistory     WatchHistory[]
 
   @@map("users")
 }
@@ -59,13 +73,52 @@ model RefreshToken {
 }
 
 model Movie {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  releaseYear Int?
-  rating      Float?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String         @id @default(uuid())
+  title          String
+  description    String?
+  ageRestriction Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  sessions       Session[]
+  watchHistory   WatchHistory[]
 
   @@map("movies")
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  movieId    String
+  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+  timeSlot   TimeSlot
+  roomNumber Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tickets    Ticket[]
+
+  @@unique([date, timeSlot, roomNumber])
+  @@map("sessions")
+}
+
+model Ticket {
+  id          String   @id @default(uuid())
+  userId      String
+  sessionId   String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  purchasedAt DateTime @default(now())
+
+  @@unique([userId, sessionId])
+  @@map("tickets")
+}
+
+model WatchHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  movieId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  watchedAt DateTime @default(now())
+
+  @@map("watch_history")
 }
