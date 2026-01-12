@@ -108,8 +108,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else {
-        const rawMessage = (exceptionResponse as { message?: string | string[] })
-          .message;
+        const rawMessage = (
+          exceptionResponse as { message?: string | string[] }
+        ).message;
         message = Array.isArray(rawMessage)
           ? this.truncateValidationErrors(rawMessage)
           : rawMessage || exception.message;
