@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 export class BuyTicketDto {
   @ApiProperty({
@@ -8,4 +8,17 @@ export class BuyTicketDto {
   })
   @IsUUID()
   sessionId: string;
+
+  @ApiPropertyOptional({
+    example: 2,
+    description: 'Number of tickets to purchase (1-10)',
+    default: 1,
+    minimum: 1,
+    maximum: 10,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  quantity?: number;
 }

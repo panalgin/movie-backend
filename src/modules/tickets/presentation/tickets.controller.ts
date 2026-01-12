@@ -36,21 +36,21 @@ export class TicketsController {
   @Post()
   @Roles(UserRole.CUSTOMER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Buy a ticket (Customer only)' })
+  @ApiOperation({ summary: 'Buy tickets (Customer only)' })
   @ApiResponse({
     status: 201,
-    description: 'Ticket purchased successfully',
+    description: 'Tickets purchased successfully',
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({
     description: 'Forbidden - Customer only or age restriction',
   })
-  async buyTicket(
+  async buyTickets(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: BuyTicketDto,
   ) {
     return this.commandBus.execute(
-      new BuyTicketCommand(user.id, dto.sessionId, user.role),
+      new BuyTicketCommand(user.id, dto.sessionId, dto.quantity ?? 1, user.role),
     );
   }
 

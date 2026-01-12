@@ -56,25 +56,19 @@ export class PrismaTicketRepository implements ITicketRepository {
   async findByUserAndSession(
     userId: string,
     sessionId: string,
-  ): Promise<Ticket | null> {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: {
-        userId_sessionId: {
-          userId,
-          sessionId,
-        },
-      },
+  ): Promise<Ticket[]> {
+    const tickets = await this.prisma.ticket.findMany({
+      where: { userId, sessionId },
+      orderBy: { purchasedAt: 'desc' },
     });
 
-    if (!ticket) {
-      return null;
-    }
-
-    return Ticket.reconstitute(ticket.id, {
-      userId: ticket.userId,
-      sessionId: ticket.sessionId,
-      purchasedAt: ticket.purchasedAt,
-    });
+    return tickets.map((ticket) =>
+      Ticket.reconstitute(ticket.id, {
+        userId: ticket.userId,
+        sessionId: ticket.sessionId,
+        purchasedAt: ticket.purchasedAt,
+      }),
+    );
   }
 
   async save(ticket: Ticket): Promise<Ticket> {
@@ -94,14 +88,18 @@ export class PrismaTicketRepository implements ITicketRepository {
     });
   }
 
-  async existsByUserAndSession(
-    userId: string,
-    sessionId: string,
-  ): Promise<boolean> {
-    const count = await this.prisma.ticket.count({
-      where: { userId, sessionId },
-    });
-    return count > 0;
+  async saveMany(tickets: Ticket[]): Promise<Ticket[]> {
+    const data = tickets.map((ticket) => ({
+      id: ticket.id,
+      userId: ticket.userId,
+      sessionId: ticket.sessionId,
+      purchasedAt: ticket.purchasedAt,
+    }));
+
+    await this.prisma.ticket.createMany({ data });
+
+    // Return the tickets as-is since createMany doesn't return created records
+    return tickets;
   }
 
   async countBySessionId(sessionId: string): Promise<number> {

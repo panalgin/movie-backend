@@ -121,7 +121,7 @@ model Ticket {
   session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   purchasedAt DateTime @default(now())
 
-  @@unique([userId, sessionId])
+  @@index([userId, sessionId])
   @@map("tickets")
 }
 

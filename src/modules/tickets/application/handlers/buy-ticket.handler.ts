@@ -50,7 +50,9 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
     private readonly notificationService: NotificationService,
   ) {}
 
-  async execute(command: BuyTicketCommand): Promise<Ticket> {
+  async execute(command: BuyTicketCommand): Promise<Ticket[]> {
+    const quantity = command.quantity;
+
     // Check if session exists
     const session = await this.sessionRepository.findById(command.sessionId);
     if (!session) {
@@ -90,49 +92,54 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
     }
 
     // Check room capacity
-    const ticketCount = await this.ticketRepository.countBySessionId(
+    const currentTicketCount = await this.ticketRepository.countBySessionId(
       command.sessionId,
     );
-    if (!room.hasCapacityFor(ticketCount)) {
-      throw new ConflictException('Session is sold out');
+    const availableSeats = room.remainingCapacity(currentTicketCount);
+
+    if (availableSeats < quantity) {
+      throw new ConflictException(
+        `Not enough seats available. Available: ${availableSeats}, Requested: ${quantity}`,
+      );
     }
 
-    // Check if user already has a ticket for this session
-    const existingTicket = await this.ticketRepository.existsByUserAndSession(
-      command.userId,
-      command.sessionId,
-    );
-    if (existingTicket) {
-      throw new ConflictException('You already have a ticket for this session');
+    // Create tickets
+    const tickets: Ticket[] = [];
+    for (let i = 0; i < quantity; i++) {
+      tickets.push(
+        Ticket.create({
+          userId: command.userId,
+          sessionId: command.sessionId,
+        }),
+      );
     }
 
-    const ticket = Ticket.create({
-      userId: command.userId,
-      sessionId: command.sessionId,
-    });
+    const savedTickets = await this.ticketRepository.saveMany(tickets);
 
-    const saved = await this.ticketRepository.save(ticket);
-
-    await this.auditService.logSuccess(
-      {
-        action: AuditAction.TICKET_PURCHASE,
-        entityType: AuditEntityType.TICKET,
-        entityId: saved.id,
-        metadata: {
-          sessionId: session.id,
-          movieId: movie.id,
-          movieTitle: movie.title,
-          sessionDate: session.date,
-          timeSlot: session.timeSlot,
-          roomId: session.roomId,
-          roomNumber: room.number,
+    // Log audit for each ticket
+    for (const ticket of savedTickets) {
+      await this.auditService.logSuccess(
+        {
+          action: AuditAction.TICKET_PURCHASE,
+          entityType: AuditEntityType.TICKET,
+          entityId: ticket.id,
+          metadata: {
+            sessionId: session.id,
+            movieId: movie.id,
+            movieTitle: movie.title,
+            sessionDate: session.date,
+            timeSlot: session.timeSlot,
+            roomId: session.roomId,
+            roomNumber: room.number,
+            quantity,
+          },
         },
-      },
-      {
-        actorId: command.userId,
-        actorRole: command.actorRole,
-      },
-    );
+        {
+          actorId: command.userId,
+          actorRole: command.actorRole,
+        },
+      );
+    }
 
     // Send notification (async, non-blocking)
     this.sendPurchaseNotification(user.email, {
@@ -140,12 +147,13 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
       sessionDate: session.date.toISOString().split('T')[0],
       timeSlot: session.timeSlot,
       roomNumber: room.number,
-      ticketId: saved.id,
+      quantity,
+      ticketIds: savedTickets.map((t) => t.id),
     }).catch((error) => {
       this.logger.error('Failed to send ticket notification', error);
     });
 
-    return saved;
+    return savedTickets;
   }
 
   private async sendPurchaseNotification(
@@ -155,7 +163,8 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
       sessionDate: string;
       timeSlot: string;
       roomNumber: number;
-      ticketId: string;
+      quantity: number;
+      ticketIds: string[];
     },
   ): Promise<void> {
     await this.notificationService.send({

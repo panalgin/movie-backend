@@ -39,7 +39,7 @@ describe('BuyTicketHandler', () => {
     id: 'room-id',
     number: 1,
     capacity: 50,
-    hasCapacityFor: jest.fn().mockReturnValue(true),
+    remainingCapacity: jest.fn().mockReturnValue(40),
   };
 
   const mockMovie = {
@@ -58,8 +58,7 @@ describe('BuyTicketHandler', () => {
   beforeEach(async () => {
     ticketRepository = {
       findById: jest.fn(),
-      save: jest.fn(),
-      existsByUserAndSession: jest.fn().mockResolvedValue(false),
+      saveMany: jest.fn().mockImplementation((tickets) => Promise.resolve(tickets)),
       countBySessionId: jest.fn().mockResolvedValue(10),
     };
 
@@ -78,6 +77,11 @@ describe('BuyTicketHandler', () => {
     userRepository = {
       findById: jest.fn().mockResolvedValue(mockUser),
     };
+
+    // Reset mocks
+    mockSession.isPast.mockReturnValue(false);
+    mockMovie.canBeWatchedBy.mockReturnValue(true);
+    mockRoom.remainingCapacity.mockReturnValue(40);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -101,45 +105,74 @@ describe('BuyTicketHandler', () => {
     handler = module.get<BuyTicketHandler>(BuyTicketHandler);
   });
 
-  it('should buy ticket successfully', async () => {
-    const savedTicket = Ticket.create({
-      userId: 'user-id',
-      sessionId: 'session-id',
-    });
-    ticketRepository.save.mockResolvedValue(savedTicket);
-
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+  it('should buy single ticket successfully', async () => {
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
     const result = await handler.execute(command);
 
-    expect(result).toBeDefined();
-    expect(result.userId).toBe('user-id');
-    expect(result.sessionId).toBe('session-id');
-    expect(ticketRepository.save).toHaveBeenCalled();
+    expect(result).toHaveLength(1);
+    expect(result[0].userId).toBe('user-id');
+    expect(result[0].sessionId).toBe('session-id');
+    expect(ticketRepository.saveMany).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.any(Ticket)]),
+    );
+  });
+
+  it('should buy multiple tickets successfully', async () => {
+    const command = new BuyTicketCommand('user-id', 'session-id', 3, 'CUSTOMER');
+    const result = await handler.execute(command);
+
+    expect(result).toHaveLength(3);
+    expect(ticketRepository.saveMany).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.any(Ticket),
+        expect.any(Ticket),
+        expect.any(Ticket),
+      ]),
+    );
+  });
+
+  it('should allow same user to buy tickets multiple times', async () => {
+    // First purchase
+    const command1 = new BuyTicketCommand(
+      'user-id',
+      'session-id',
+      2,
+      'CUSTOMER',
+    );
+    const result1 = await handler.execute(command1);
+    expect(result1).toHaveLength(2);
+
+    // Second purchase (same user, same session)
+    const command2 = new BuyTicketCommand(
+      'user-id',
+      'session-id',
+      1,
+      'CUSTOMER',
+    );
+    const result2 = await handler.execute(command2);
+    expect(result2).toHaveLength(1);
   });
 
   it('should throw NotFoundException if session not found', async () => {
     sessionRepository.findById.mockResolvedValue(null);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw BadRequestException for past session', async () => {
     mockSession.isPast.mockReturnValue(true);
-    sessionRepository.findById.mockResolvedValue(mockSession);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
-
-    mockSession.isPast.mockReturnValue(false);
   });
 
   it('should throw NotFoundException if movie not found', async () => {
     movieRepository.findById.mockResolvedValue(null);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
@@ -147,52 +180,46 @@ describe('BuyTicketHandler', () => {
   it('should throw NotFoundException if user not found', async () => {
     userRepository.findById.mockResolvedValue(null);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw ForbiddenException for age restriction', async () => {
     mockMovie.canBeWatchedBy.mockReturnValue(false);
-    movieRepository.findById.mockResolvedValue(mockMovie);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
-
-    mockMovie.canBeWatchedBy.mockReturnValue(true);
   });
 
   it('should throw NotFoundException if room not found', async () => {
     roomRepository.findById.mockResolvedValue(null);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
   });
 
-  it('should throw ConflictException when session is sold out', async () => {
-    mockRoom.hasCapacityFor.mockReturnValue(false);
-    roomRepository.findById.mockResolvedValue(mockRoom);
+  it('should throw ConflictException when not enough seats for quantity', async () => {
+    mockRoom.remainingCapacity.mockReturnValue(2);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 5, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Session is sold out',
+      'Not enough seats available',
     );
-
-    mockRoom.hasCapacityFor.mockReturnValue(true);
   });
 
-  it('should throw ConflictException for duplicate ticket', async () => {
-    ticketRepository.existsByUserAndSession.mockResolvedValue(true);
+  it('should throw ConflictException when session is sold out', async () => {
+    mockRoom.remainingCapacity.mockReturnValue(0);
 
-    const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
+    const command = new BuyTicketCommand('user-id', 'session-id', 1, 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'You already have a ticket for this session',
+      'Not enough seats available',
     );
   });
 });

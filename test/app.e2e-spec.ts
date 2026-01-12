@@ -329,7 +329,7 @@ describe('Movie Management System (e2e)', () => {
 
   describe('Tickets', () => {
     describe('POST /tickets/v1', () => {
-      it('should allow customer to buy ticket', async () => {
+      it('should allow customer to buy single ticket', async () => {
         const response = await request(app.getHttpServer())
           .post('/tickets/v1')
           .set('Authorization', `Bearer ${customerToken}`)
@@ -338,18 +338,38 @@ describe('Movie Management System (e2e)', () => {
           })
           .expect(201);
 
-        expect(response.body.sessionId).toBe(sessionId);
-        ticketId = response.body.id;
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body).toHaveLength(1);
+        expect(response.body[0].sessionId).toBe(sessionId);
+        ticketId = response.body[0].id;
       });
 
-      it('should prevent duplicate ticket purchase', async () => {
-        await request(app.getHttpServer())
+      it('should allow customer to buy multiple tickets', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/tickets/v1')
+          .set('Authorization', `Bearer ${customerToken}`)
+          .send({
+            sessionId,
+            quantity: 2,
+          })
+          .expect(201);
+
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body).toHaveLength(2);
+        expect(response.body[0].sessionId).toBe(sessionId);
+        expect(response.body[1].sessionId).toBe(sessionId);
+      });
+
+      it('should allow same user to buy tickets again for same session', async () => {
+        const response = await request(app.getHttpServer())
           .post('/tickets/v1')
           .set('Authorization', `Bearer ${customerToken}`)
           .send({
             sessionId,
           })
-          .expect(409);
+          .expect(201);
+
+        expect(response.body).toHaveLength(1);
       });
     });
 
