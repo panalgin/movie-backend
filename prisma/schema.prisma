@@ -122,3 +122,24 @@ model WatchHistory {
 
   @@map("watch_history")
 }
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorRole  String?
+  action     String // USER_LOGIN, MOVIE_CREATE, etc.
+  entityType String? // User, Movie, Session, Ticket
+  entityId   String?
+  status     String // SUCCESS, FAILURE
+  ipAddress  String?
+  userAgent  String?
+  changes    Json? // { before: {...}, after: {...} }
+  metadata   Json? // extra context
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

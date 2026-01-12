@@ -1,0 +1,33 @@
+export enum AuditAction {
+  // Auth
+  USER_REGISTER = 'USER_REGISTER',
+  USER_LOGIN = 'USER_LOGIN',
+  USER_LOGIN_FAILED = 'USER_LOGIN_FAILED',
+  USER_LOGOUT = 'USER_LOGOUT',
+
+  // Movies
+  MOVIE_CREATE = 'MOVIE_CREATE',
+  MOVIE_UPDATE = 'MOVIE_UPDATE',
+  MOVIE_DELETE = 'MOVIE_DELETE',
+  MOVIE_BULK_CREATE = 'MOVIE_BULK_CREATE',
+  MOVIE_BULK_DELETE = 'MOVIE_BULK_DELETE',
+
+  // Sessions
+  SESSION_CREATE = 'SESSION_CREATE',
+  SESSION_DELETE = 'SESSION_DELETE',
+
+  // Tickets
+  TICKET_PURCHASE = 'TICKET_PURCHASE',
+}
+
+export enum AuditStatus {
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
+}
+
+export enum AuditEntityType {
+  USER = 'User',
+  MOVIE = 'Movie',
+  SESSION = 'Session',
+  TICKET = 'Ticket',
+}
