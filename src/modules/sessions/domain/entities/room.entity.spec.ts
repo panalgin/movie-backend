@@ -77,8 +77,8 @@ describe('Room', () => {
   describe('reconstitute', () => {
     it('should reconstitute room from persistence', () => {
       const id = 'room-id';
-      const createdAt = new Date('2024-01-01');
-      const updatedAt = new Date('2024-01-02');
+      const createdAt = new Date('2026-01-12');
+      const updatedAt = new Date('2026-01-12');
 
       const room = Room.reconstitute(id, {
         number: 3,

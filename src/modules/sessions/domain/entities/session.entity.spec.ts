@@ -114,8 +114,8 @@ describe('Session', () => {
   describe('reconstitute', () => {
     it('should reconstitute session from persistence', () => {
       const id = 'session-id';
-      const createdAt = new Date('2024-01-01');
-      const updatedAt = new Date('2024-01-02');
+      const createdAt = new Date('2026-01-12');
+      const updatedAt = new Date('2026-01-12');
 
       const session = Session.reconstitute(id, {
         movieId: 'movie-123',

@@ -18,7 +18,7 @@ export class CreateSessionDto {
   roomId: string;
 
   @ApiProperty({
-    example: '2024-12-25',
+    example: '2026-01-12',
     description: 'Session date (YYYY-MM-DD)',
   })
   @IsDateString()
