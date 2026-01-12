@@ -14,16 +14,16 @@ A NestJS-based movie management API following Domain-Driven Design (DDD) princip
 
 | Type | Tests | Coverage |
 |------|-------|----------|
-| Unit | 120 | Domain entities, value objects, handlers & services |
-| E2E | 26 | Full API integration tests |
+| Unit | 179 | Domain entities, value objects, handlers & services |
+| E2E | 41 | Full API integration tests |
 
 ```
-Domain Layer Coverage:
-├── Entities:     ~90% (User, Movie, Session, Room, Ticket, WatchHistory)
+Coverage Summary (~48% overall, critical paths ~90%):
+├── Entities:      ~92% (User, Movie, Session, Room, Ticket, WatchHistory, AuditLog)
 ├── Value Objects: 100% (UserAge, TimeSlot, AgeRestriction)
-├── Handlers:     ~85% (BuyTicket, CreateSession, UpdateSession, WatchMovie)
-├── Services:     ~90% (AuthService)
-└── Base Classes:  ~50% (BaseEntity, BaseValueObject)
+├── Handlers:      ~88% (All CQRS handlers for Movies, Sessions, Rooms, Tickets, Watch)
+├── Services:      ~95% (AuthService, AuditService)
+└── Domain Logic:  ~90% (Business rules, validations)
 ```
 
 ## Features
@@ -114,7 +114,11 @@ src/
     │
     ├── sessions/                        # Sessions Bounded Context
     │   ├── domain/
-    │   │   └── entities/                # Session, Room entities
+    │   │   └── entities/                # Session entity
+    │   └── ...
+    ├── rooms/                           # Rooms Bounded Context
+    │   ├── domain/
+    │   │   └── entities/                # Room entity
     │   └── ...
     ├── tickets/                         # Tickets Bounded Context
     ├── watch/                           # Watch History Bounded Context
@@ -440,6 +444,7 @@ This creates:
 | `yarn db:push` | Push schema to database |
 | `yarn db:studio` | Open Prisma Studio |
 | `yarn db:seed:local` | Seed local database (50 movies, 10 rooms, admin user) |
+| `yarn openapi:export` | Export OpenAPI spec to openapi.json |
 | `yarn test` | Run unit tests |
 | `yarn test:e2e` | Run E2E tests |
 | `yarn test:cov` | Run tests with coverage |
@@ -508,18 +513,18 @@ A TypeScript/JavaScript client is auto-generated from OpenAPI spec and published
 
 ```bash
 # Add GitHub Packages registry to .npmrc
-echo "@YOUR_USERNAME:registry=https://npm.pkg.github.com" >> .npmrc
+echo "@panalgin:registry=https://npm.pkg.github.com" >> .npmrc
 
 # Install the client
-npm install @YOUR_USERNAME/movie-backend-client
+npm install @panalgin/movie-backend-client
 # or
-yarn add @YOUR_USERNAME/movie-backend-client
+yarn add @panalgin/movie-backend-client
 ```
 
 ### Usage
 
 ```typescript
-import { Configuration, MoviesApi, AuthApi } from '@YOUR_USERNAME/movie-backend-client';
+import { Configuration, MoviesApi, AuthApi } from '@panalgin/movie-backend-client';
 
 // Configure the client
 const config = new Configuration({
