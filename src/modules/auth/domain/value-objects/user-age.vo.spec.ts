@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { UserAge } from './user-age.vo';
 
 describe('UserAge', () => {
@@ -9,15 +9,21 @@ describe('UserAge', () => {
     });
 
     it('should throw an error for non-integer age', () => {
-      expect(() => UserAge.create(25.5)).toThrow(DomainException);
+      expect(() => UserAge.create(25.5)).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.INVALID_AGE }),
+      );
     });
 
     it('should throw an error for age less than 1', () => {
-      expect(() => UserAge.create(0)).toThrow(DomainException);
+      expect(() => UserAge.create(0)).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.INVALID_AGE }),
+      );
     });
 
     it('should throw an error for age greater than 120', () => {
-      expect(() => UserAge.create(121)).toThrow(DomainException);
+      expect(() => UserAge.create(121)).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.INVALID_AGE }),
+      );
     });
   });
 

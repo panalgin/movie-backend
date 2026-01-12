@@ -1,4 +1,8 @@
-import { BaseEntity, DomainException } from '../../../../shared/domain';
+import {
+  BaseEntity,
+  DomainErrorCode,
+  DomainException,
+} from '../../../../shared/domain';
 
 interface WatchHistoryProps {
   userId: string;
@@ -30,11 +34,17 @@ export class WatchHistory extends BaseEntity<WatchHistoryProps> {
 
   public static create(props: CreateWatchHistoryProps): WatchHistory {
     if (!props.userId) {
-      throw new DomainException('User ID is required');
+      throw new DomainException(
+        DomainErrorCode.USER_ID_REQUIRED,
+        'User ID is required',
+      );
     }
 
     if (!props.movieId) {
-      throw new DomainException('Movie ID is required');
+      throw new DomainException(
+        DomainErrorCode.MOVIE_ID_REQUIRED,
+        'Movie ID is required',
+      );
     }
 
     return new WatchHistory(crypto.randomUUID(), {

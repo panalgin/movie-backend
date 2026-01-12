@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { TimeSlot, TimeSlotEnum } from './time-slot.vo';
 
 describe('TimeSlot', () => {
@@ -11,7 +11,7 @@ describe('TimeSlot', () => {
 
     it('should throw an error for invalid time slot', () => {
       expect(() => TimeSlot.create('INVALID' as TimeSlotEnum)).toThrow(
-        DomainException,
+        expect.objectContaining({ code: DomainErrorCode.INVALID_TIME_SLOT }),
       );
     });
   });
@@ -23,7 +23,9 @@ describe('TimeSlot', () => {
     });
 
     it('should throw an error for invalid string', () => {
-      expect(() => TimeSlot.fromString('INVALID')).toThrow(DomainException);
+      expect(() => TimeSlot.fromString('INVALID')).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.INVALID_TIME_SLOT }),
+      );
     });
   });
 

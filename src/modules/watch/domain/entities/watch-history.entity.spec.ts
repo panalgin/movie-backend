@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { WatchHistory } from './watch-history.entity';
 
 describe('WatchHistory', () => {
@@ -21,7 +21,9 @@ describe('WatchHistory', () => {
           userId: '',
           movieId: 'movie-456',
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.USER_ID_REQUIRED }),
+      );
     });
 
     it('should throw error for missing movie ID', () => {
@@ -30,7 +32,9 @@ describe('WatchHistory', () => {
           userId: 'user-123',
           movieId: '',
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.MOVIE_ID_REQUIRED }),
+      );
     });
   });
 

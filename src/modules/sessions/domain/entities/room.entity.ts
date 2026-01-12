@@ -1,4 +1,8 @@
-import { BaseEntity, DomainException } from '../../../../shared/domain';
+import {
+  BaseEntity,
+  DomainErrorCode,
+  DomainException,
+} from '../../../../shared/domain';
 
 interface RoomProps {
   number: number;
@@ -35,12 +39,18 @@ export class Room extends BaseEntity<RoomProps> {
 
   public static create(props: CreateRoomProps): Room {
     if (props.number < 1) {
-      throw new DomainException('Room number must be at least 1');
+      throw new DomainException(
+        DomainErrorCode.INVALID_ROOM_NUMBER,
+        'Room number must be at least 1',
+      );
     }
 
     const capacity = props.capacity ?? 50;
     if (capacity < 1) {
-      throw new DomainException('Room capacity must be at least 1');
+      throw new DomainException(
+        DomainErrorCode.INVALID_ROOM_CAPACITY,
+        'Room capacity must be at least 1',
+      );
     }
 
     const now = new Date();

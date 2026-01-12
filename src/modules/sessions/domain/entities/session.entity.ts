@@ -1,4 +1,8 @@
-import { BaseEntity, DomainException } from '../../../../shared/domain';
+import {
+  BaseEntity,
+  DomainErrorCode,
+  DomainException,
+} from '../../../../shared/domain';
 import { TimeSlot, TimeSlotEnum } from '../../../movies/domain/value-objects';
 
 interface SessionProps {
@@ -28,7 +32,10 @@ export class Session extends BaseEntity<SessionProps> {
     sessionDateTime.setHours(timeSlot.startHour, 0, 0, 0);
 
     if (sessionDateTime < now) {
-      throw new DomainException('Session time cannot be in the past');
+      throw new DomainException(
+        DomainErrorCode.SESSION_IN_PAST,
+        'Session time cannot be in the past',
+      );
     }
   }
 
@@ -62,15 +69,24 @@ export class Session extends BaseEntity<SessionProps> {
 
   public static create(props: CreateSessionProps): Session {
     if (!props.movieId) {
-      throw new DomainException('Movie ID is required');
+      throw new DomainException(
+        DomainErrorCode.MOVIE_ID_REQUIRED,
+        'Movie ID is required',
+      );
     }
 
     if (!props.roomId) {
-      throw new DomainException('Room ID is required');
+      throw new DomainException(
+        DomainErrorCode.ROOM_ID_REQUIRED,
+        'Room ID is required',
+      );
     }
 
     if (!props.date) {
-      throw new DomainException('Session date is required');
+      throw new DomainException(
+        DomainErrorCode.SESSION_DATE_REQUIRED,
+        'Session date is required',
+      );
     }
 
     const sessionDate = new Date(props.date);
@@ -143,6 +159,7 @@ export class Session extends BaseEntity<SessionProps> {
     // Cannot update a past session
     if (this.isPast()) {
       throw new DomainException(
+        DomainErrorCode.SESSION_IN_PAST,
         'Cannot update a session that has already passed',
       );
     }

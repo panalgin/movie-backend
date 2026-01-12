@@ -1,4 +1,8 @@
-import { BaseEntity, DomainException } from '../../../../shared/domain';
+import {
+  BaseEntity,
+  DomainErrorCode,
+  DomainException,
+} from '../../../../shared/domain';
 import { UserAge } from '../value-objects';
 
 export enum UserRole {
@@ -59,11 +63,17 @@ export class User extends BaseEntity<UserProps> {
 
   public static create(props: CreateUserProps): User {
     if (!props.username || props.username.trim().length < 3) {
-      throw new DomainException('Username must be at least 3 characters');
+      throw new DomainException(
+        DomainErrorCode.USERNAME_TOO_SHORT,
+        'Username must be at least 3 characters',
+      );
     }
 
     if (!props.email || !props.email.includes('@')) {
-      throw new DomainException('Invalid email format');
+      throw new DomainException(
+        DomainErrorCode.INVALID_EMAIL_FORMAT,
+        'Invalid email format',
+      );
     }
 
     const userAge = UserAge.create(props.age);

@@ -33,7 +33,7 @@ export class NotificationService {
 
   constructor(
     @Inject(NOTIFICATION_PROVIDERS)
-    private readonly providers: INotificationProvider[],
+    providers: INotificationProvider[],
   ) {
     this.providerMap = new Map();
     for (const provider of providers) {

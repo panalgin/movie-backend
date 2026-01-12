@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { Room } from './room.entity';
 
 describe('Room', () => {
@@ -20,16 +20,24 @@ describe('Room', () => {
     });
 
     it('should throw error for invalid room number', () => {
-      expect(() => Room.create({ number: 0 })).toThrow(DomainException);
-      expect(() => Room.create({ number: -1 })).toThrow(DomainException);
+      expect(() => Room.create({ number: 0 })).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.INVALID_ROOM_NUMBER }),
+      );
+      expect(() => Room.create({ number: -1 })).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.INVALID_ROOM_NUMBER }),
+      );
     });
 
     it('should throw error for invalid capacity', () => {
       expect(() => Room.create({ number: 1, capacity: 0 })).toThrow(
-        DomainException,
+        expect.objectContaining({
+          code: DomainErrorCode.INVALID_ROOM_CAPACITY,
+        }),
       );
       expect(() => Room.create({ number: 1, capacity: -1 })).toThrow(
-        DomainException,
+        expect.objectContaining({
+          code: DomainErrorCode.INVALID_ROOM_CAPACITY,
+        }),
       );
     });
   });

@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { Movie } from './movie.entity';
 
 describe('Movie', () => {
@@ -25,11 +25,15 @@ describe('Movie', () => {
     });
 
     it('should throw error for empty title', () => {
-      expect(() => Movie.create({ title: '' })).toThrow(DomainException);
+      expect(() => Movie.create({ title: '' })).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.MOVIE_TITLE_REQUIRED }),
+      );
     });
 
     it('should throw error for whitespace-only title', () => {
-      expect(() => Movie.create({ title: '   ' })).toThrow(DomainException);
+      expect(() => Movie.create({ title: '   ' })).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.MOVIE_TITLE_REQUIRED }),
+      );
     });
   });
 
@@ -58,7 +62,9 @@ describe('Movie', () => {
 
     it('should throw error for invalid title on update', () => {
       const movie = Movie.create({ title: 'Test' });
-      expect(() => movie.update({ title: '' })).toThrow(DomainException);
+      expect(() => movie.update({ title: '' })).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.MOVIE_TITLE_REQUIRED }),
+      );
     });
   });
 

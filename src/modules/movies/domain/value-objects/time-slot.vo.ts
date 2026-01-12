@@ -1,4 +1,8 @@
-import { DomainException, ValueObject } from '../../../../shared/domain';
+import {
+  DomainErrorCode,
+  DomainException,
+  ValueObject,
+} from '../../../../shared/domain';
 
 export enum TimeSlotEnum {
   SLOT_10_12 = 'SLOT_10_12',
@@ -53,14 +57,20 @@ export class TimeSlot extends ValueObject<TimeSlotProps> {
 
   public static create(value: TimeSlotEnum): TimeSlot {
     if (!Object.values(TimeSlotEnum).includes(value)) {
-      throw new DomainException(`Invalid time slot: ${value}`);
+      throw new DomainException(
+        DomainErrorCode.INVALID_TIME_SLOT,
+        `Invalid time slot: ${value}`,
+      );
     }
     return new TimeSlot({ value });
   }
 
   public static fromString(value: string): TimeSlot {
     if (!Object.values(TimeSlotEnum).includes(value as TimeSlotEnum)) {
-      throw new DomainException(`Invalid time slot: ${value}`);
+      throw new DomainException(
+        DomainErrorCode.INVALID_TIME_SLOT,
+        `Invalid time slot: ${value}`,
+      );
     }
     return new TimeSlot({ value: value as TimeSlotEnum });
   }

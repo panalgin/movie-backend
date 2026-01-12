@@ -1,4 +1,8 @@
-import { BaseEntity, DomainException } from '../../../../shared/domain';
+import {
+  BaseEntity,
+  DomainErrorCode,
+  DomainException,
+} from '../../../../shared/domain';
 import { AgeRestriction } from '../value-objects';
 
 interface MovieProps {
@@ -48,7 +52,10 @@ export class Movie extends BaseEntity<MovieProps> {
 
   public static create(props: CreateMovieProps): Movie {
     if (!props.title || props.title.trim().length < 1) {
-      throw new DomainException('Movie title is required');
+      throw new DomainException(
+        DomainErrorCode.MOVIE_TITLE_REQUIRED,
+        'Movie title is required',
+      );
     }
 
     const now = new Date();
@@ -90,7 +97,10 @@ export class Movie extends BaseEntity<MovieProps> {
 
     if (props.title !== undefined) {
       if (props.title.trim().length < 1) {
-        throw new DomainException('Movie title is required');
+        throw new DomainException(
+          DomainErrorCode.MOVIE_TITLE_REQUIRED,
+          'Movie title is required',
+        );
       }
       updatedProps.title = props.title.trim();
     }

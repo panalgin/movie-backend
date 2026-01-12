@@ -1,4 +1,8 @@
-import { DomainException, ValueObject } from '../../../../shared/domain';
+import {
+  DomainErrorCode,
+  DomainException,
+  ValueObject,
+} from '../../../../shared/domain';
 
 interface UserAgeProps {
   value: number;
@@ -18,10 +22,14 @@ export class UserAge extends ValueObject<UserAgeProps> {
 
   public static create(value: number): UserAge {
     if (!Number.isInteger(value)) {
-      throw new DomainException('Age must be an integer');
+      throw new DomainException(
+        DomainErrorCode.INVALID_AGE,
+        'Age must be an integer',
+      );
     }
     if (value < UserAge.MIN_AGE || value > UserAge.MAX_AGE) {
       throw new DomainException(
+        DomainErrorCode.INVALID_AGE,
         `Age must be between ${UserAge.MIN_AGE} and ${UserAge.MAX_AGE}`,
       );
     }

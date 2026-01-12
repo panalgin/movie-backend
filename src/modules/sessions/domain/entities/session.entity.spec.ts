@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode, DomainException } from '../../../../shared/domain';
 import { TimeSlotEnum } from '../../../movies/domain/value-objects';
 import { Session } from './session.entity';
 
@@ -29,7 +29,9 @@ describe('Session', () => {
           ...validProps,
           movieId: '',
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.MOVIE_ID_REQUIRED }),
+      );
     });
 
     it('should throw error for missing room ID', () => {
@@ -38,7 +40,9 @@ describe('Session', () => {
           ...validProps,
           roomId: '',
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.ROOM_ID_REQUIRED }),
+      );
     });
 
     it('should throw error for past date', () => {
@@ -50,7 +54,9 @@ describe('Session', () => {
           ...validProps,
           date: pastDate,
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.SESSION_IN_PAST }),
+      );
     });
   });
 
@@ -163,7 +169,7 @@ describe('Session', () => {
 
       expect(() => session.update({ date: pastDate })).toThrow(DomainException);
       expect(() => session.update({ date: pastDate })).toThrow(
-        'Session time cannot be in the past',
+        expect.objectContaining({ code: DomainErrorCode.SESSION_IN_PAST }),
       );
     });
 
@@ -184,7 +190,7 @@ describe('Session', () => {
         DomainException,
       );
       expect(() => pastSession.update({ roomId: 'new-room' })).toThrow(
-        'Cannot update a session that has already passed',
+        expect.objectContaining({ code: DomainErrorCode.SESSION_IN_PAST }),
       );
     });
   });

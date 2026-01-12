@@ -1,4 +1,8 @@
-import { BaseEntity, DomainException } from '../../../../shared/domain';
+import {
+  BaseEntity,
+  DomainErrorCode,
+  DomainException,
+} from '../../../../shared/domain';
 
 interface TicketProps {
   userId: string;
@@ -30,11 +34,17 @@ export class Ticket extends BaseEntity<TicketProps> {
 
   public static create(props: CreateTicketProps): Ticket {
     if (!props.userId) {
-      throw new DomainException('User ID is required');
+      throw new DomainException(
+        DomainErrorCode.USER_ID_REQUIRED,
+        'User ID is required',
+      );
     }
 
     if (!props.sessionId) {
-      throw new DomainException('Session ID is required');
+      throw new DomainException(
+        DomainErrorCode.SESSION_ID_REQUIRED,
+        'Session ID is required',
+      );
     }
 
     return new Ticket(crypto.randomUUID(), {

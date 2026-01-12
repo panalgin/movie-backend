@@ -1,4 +1,8 @@
-import { DomainException, ValueObject } from '../../../../shared/domain';
+import {
+  DomainErrorCode,
+  DomainException,
+  ValueObject,
+} from '../../../../shared/domain';
 
 interface AgeRestrictionProps {
   value: number;
@@ -19,6 +23,7 @@ export class AgeRestriction extends ValueObject<AgeRestrictionProps> {
   public static create(value: number): AgeRestriction {
     if (value < AgeRestriction.MIN_AGE || value > AgeRestriction.MAX_AGE) {
       throw new DomainException(
+        DomainErrorCode.INVALID_AGE_RESTRICTION,
         `Age restriction must be between ${AgeRestriction.MIN_AGE} and ${AgeRestriction.MAX_AGE}`,
       );
     }

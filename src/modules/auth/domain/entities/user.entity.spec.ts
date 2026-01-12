@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { User, UserRole } from './user.entity';
 
 describe('User', () => {
@@ -35,7 +35,9 @@ describe('User', () => {
           email: 'test@example.com',
           age: 25,
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.USERNAME_TOO_SHORT }),
+      );
     });
 
     it('should throw error for invalid email', () => {
@@ -45,7 +47,9 @@ describe('User', () => {
           email: 'invalid-email',
           age: 25,
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.INVALID_EMAIL_FORMAT }),
+      );
     });
 
     it('should normalize email to lowercase', () => {

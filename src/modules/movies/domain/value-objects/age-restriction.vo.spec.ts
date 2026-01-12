@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { AgeRestriction } from './age-restriction.vo';
 
 describe('AgeRestriction', () => {
@@ -9,11 +9,19 @@ describe('AgeRestriction', () => {
     });
 
     it('should throw an error for negative age restriction', () => {
-      expect(() => AgeRestriction.create(-1)).toThrow(DomainException);
+      expect(() => AgeRestriction.create(-1)).toThrow(
+        expect.objectContaining({
+          code: DomainErrorCode.INVALID_AGE_RESTRICTION,
+        }),
+      );
     });
 
     it('should throw an error for age restriction over 21', () => {
-      expect(() => AgeRestriction.create(22)).toThrow(DomainException);
+      expect(() => AgeRestriction.create(22)).toThrow(
+        expect.objectContaining({
+          code: DomainErrorCode.INVALID_AGE_RESTRICTION,
+        }),
+      );
     });
   });
 

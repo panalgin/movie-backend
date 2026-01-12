@@ -1,4 +1,4 @@
-import { DomainException } from '../../../../shared/domain';
+import { DomainErrorCode } from '../../../../shared/domain';
 import { Ticket } from './ticket.entity';
 
 describe('Ticket', () => {
@@ -21,7 +21,9 @@ describe('Ticket', () => {
           userId: '',
           sessionId: 'session-456',
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.USER_ID_REQUIRED }),
+      );
     });
 
     it('should throw error for missing session ID', () => {
@@ -30,7 +32,9 @@ describe('Ticket', () => {
           userId: 'user-123',
           sessionId: '',
         }),
-      ).toThrow(DomainException);
+      ).toThrow(
+        expect.objectContaining({ code: DomainErrorCode.SESSION_ID_REQUIRED }),
+      );
     });
   });
 
