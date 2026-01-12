@@ -1,0 +1,149 @@
+name: Publish OpenAPI Client
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: movie_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@${{ github.repository_owner }}'
+
+      - name: Setup Java (for OpenAPI Generator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install OpenAPI Generator
+        run: |
+          npm install -g @openapitools/openapi-generator-cli
+          openapi-generator-cli version-manager set 7.10.0
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: yarn db:generate
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Export OpenAPI spec
+        run: |
+          npx ts-node scripts/export-openapi.ts
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/movie_db?schema=public
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: export-jwt-secret
+          npm_package_version: ${{ steps.version.outputs.VERSION }}
+
+      - name: Generate TypeScript client
+        run: |
+          openapi-generator-cli generate \
+            -i openapi.json \
+            -g typescript-fetch \
+            -o client/src \
+            --additional-properties=supportsES6=true,npmName=@${{ github.repository_owner }}/movie-backend-client,npmVersion=${{ steps.version.outputs.VERSION }},typescriptThreePlus=true
+
+      - name: Prepare client package
+        run: |
+          cd client
+          # Replace placeholders in package.json template
+          sed "s/{{VERSION}}/${{ steps.version.outputs.VERSION }}/g" package.json.template > package.json
+          sed -i "s/{{GITHUB_REPOSITORY_OWNER}}/${{ github.repository_owner }}/g" package.json
+          sed -i "s|{{GITHUB_REPOSITORY}}|${{ github.repository }}|g" package.json
+
+          # Create tsconfig for client
+          cat > tsconfig.json << 'EOF'
+          {
+            "compilerOptions": {
+              "target": "ES2020",
+              "module": "commonjs",
+              "lib": ["ES2020", "DOM"],
+              "declaration": true,
+              "strict": true,
+              "noImplicitAny": true,
+              "strictNullChecks": true,
+              "noImplicitThis": true,
+              "alwaysStrict": true,
+              "noUnusedLocals": false,
+              "noUnusedParameters": false,
+              "noImplicitReturns": true,
+              "noFallthroughCasesInSwitch": false,
+              "inlineSourceMap": true,
+              "inlineSources": true,
+              "experimentalDecorators": true,
+              "stripInternal": true,
+              "outDir": "./dist",
+              "rootDir": "./src",
+              "skipLibCheck": true,
+              "esModuleInterop": true
+            },
+            "include": ["src/**/*"],
+            "exclude": ["node_modules", "dist"]
+          }
+          EOF
+
+          # Install TypeScript
+          npm init -y > /dev/null 2>&1 || true
+          npm install typescript --save-dev
+
+          # Compile TypeScript
+          npx tsc
+
+          # Create ESM version
+          cat > dist/index.mjs << 'EOESM'
+          export * from './index.js';
+          EOESM
+
+      - name: Publish to GitHub Packages
+        run: |
+          cd client
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload OpenAPI spec as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: openapi.json

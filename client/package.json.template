@@ -1,0 +1,32 @@
+{
+  "name": "@{{GITHUB_REPOSITORY_OWNER}}/movie-backend-client",
+  "version": "{{VERSION}}",
+  "description": "TypeScript/JavaScript client for Movie Backend API",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/{{GITHUB_REPOSITORY}}.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "movie-backend",
+    "api-client",
+    "openapi",
+    "typescript"
+  ]
+}

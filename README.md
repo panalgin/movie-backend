@@ -500,6 +500,59 @@ The application is configured for Heroku deployment with:
 - **Procfile**: Web dyno configuration
 - **Prisma Migrations**: Run on release
 
+## TypeScript Client
+
+A TypeScript/JavaScript client is auto-generated from OpenAPI spec and published to GitHub Packages on each release.
+
+### Installation
+
+```bash
+# Add GitHub Packages registry to .npmrc
+echo "@YOUR_USERNAME:registry=https://npm.pkg.github.com" >> .npmrc
+
+# Install the client
+npm install @YOUR_USERNAME/movie-backend-client
+# or
+yarn add @YOUR_USERNAME/movie-backend-client
+```
+
+### Usage
+
+```typescript
+import { Configuration, MoviesApi, AuthApi } from '@YOUR_USERNAME/movie-backend-client';
+
+// Configure the client
+const config = new Configuration({
+  basePath: 'https://your-api-url.com',
+  accessToken: 'your-jwt-token', // Optional: for authenticated requests
+});
+
+// Use the APIs
+const moviesApi = new MoviesApi(config);
+const authApi = new AuthApi(config);
+
+// Example: List movies
+const movies = await moviesApi.moviesControllerFindAll();
+
+// Example: Login
+const response = await authApi.authControllerLogin({
+  loginDto: { email: 'user@example.com', password: 'password' }
+});
+```
+
+### Publishing a New Version
+
+```bash
+# Create and push a tag to trigger the workflow
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The GitHub Action will:
+1. Export OpenAPI spec from the running application
+2. Generate TypeScript client using OpenAPI Generator
+3. Publish to GitHub Packages
+
 ## License
 
 MIT

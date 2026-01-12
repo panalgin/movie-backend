@@ -50,5 +50,14 @@ Thumbs.db
 *.tsbuildinfo
 .eslintcache
 
+# OpenAPI Client (generated)
+client/src/
+client/dist/
+client/node_modules/
+client/package.json
+client/tsconfig.json
+client/package-lock.json
+openapi.json
 
+# Local docs
 Mimari-Kararlar.md
