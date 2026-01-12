@@ -35,9 +35,7 @@ export class UpdateSessionHandler
     if (command.roomId && command.roomId !== session.roomId) {
       const room = await this.roomRepository.findById(command.roomId);
       if (!room) {
-        throw new NotFoundException(
-          `Room with ID ${command.roomId} not found`,
-        );
+        throw new NotFoundException(`Room with ID ${command.roomId} not found`);
       }
       roomNumber = room.number;
     }

@@ -34,7 +34,9 @@ describe('UpdateSessionHandler', () => {
     sessionRepository = {
       findById: jest.fn().mockResolvedValue(mockSession),
       existsConflict: jest.fn().mockResolvedValue(false),
-      update: jest.fn().mockImplementation((session) => Promise.resolve(session)),
+      update: jest
+        .fn()
+        .mockImplementation((session) => Promise.resolve(session)),
     };
 
     roomRepository = {

@@ -126,4 +126,66 @@ describe('Session', () => {
       expect(session.createdAt).toBe(createdAt);
     });
   });
+
+  describe('update', () => {
+    it('should update session with new values', () => {
+      const session = Session.create(validProps);
+      const newFutureDate = new Date();
+      newFutureDate.setDate(newFutureDate.getDate() + 14);
+
+      const updated = session.update({
+        roomId: 'new-room-id',
+        date: newFutureDate,
+        timeSlot: TimeSlotEnum.SLOT_18_20,
+      });
+
+      expect(updated.id).toBe(session.id);
+      expect(updated.roomId).toBe('new-room-id');
+      expect(updated.timeSlot).toBe(TimeSlotEnum.SLOT_18_20);
+      expect(updated.movieId).toBe(session.movieId); // unchanged
+    });
+
+    it('should update session with partial values', () => {
+      const session = Session.create(validProps);
+
+      const updated = session.update({
+        timeSlot: TimeSlotEnum.SLOT_20_22,
+      });
+
+      expect(updated.roomId).toBe(session.roomId);
+      expect(updated.timeSlot).toBe(TimeSlotEnum.SLOT_20_22);
+    });
+
+    it('should throw error when updating to past date', () => {
+      const session = Session.create(validProps);
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+
+      expect(() => session.update({ date: pastDate })).toThrow(DomainException);
+      expect(() => session.update({ date: pastDate })).toThrow(
+        'Session time cannot be in the past',
+      );
+    });
+
+    it('should throw error when updating a past session', () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 5);
+
+      const pastSession = Session.reconstitute('past-session-id', {
+        movieId: 'movie-123',
+        roomId: 'room-456',
+        date: pastDate,
+        timeSlot: TimeSlotEnum.SLOT_14_16,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      expect(() => pastSession.update({ roomId: 'new-room' })).toThrow(
+        DomainException,
+      );
+      expect(() => pastSession.update({ roomId: 'new-room' })).toThrow(
+        'Cannot update a session that has already passed',
+      );
+    });
+  });
 });

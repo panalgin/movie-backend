@@ -22,6 +22,16 @@ export class Session extends BaseEntity<SessionProps> {
     super(id, props);
   }
 
+  private static validateNotInPast(date: Date, timeSlot: TimeSlot): void {
+    const now = new Date();
+    const sessionDateTime = new Date(date);
+    sessionDateTime.setHours(timeSlot.startHour, 0, 0, 0);
+
+    if (sessionDateTime < now) {
+      throw new DomainException('Session time cannot be in the past');
+    }
+  }
+
   get movieId(): string {
     return this.props.movieId;
   }
@@ -66,12 +76,8 @@ export class Session extends BaseEntity<SessionProps> {
     const sessionDate = new Date(props.date);
     sessionDate.setHours(0, 0, 0, 0);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (sessionDate < today) {
-      throw new DomainException('Session date cannot be in the past');
-    }
+    const timeSlot = TimeSlot.create(props.timeSlot);
+    Session.validateNotInPast(sessionDate, timeSlot);
 
     const now = new Date();
 
@@ -79,7 +85,7 @@ export class Session extends BaseEntity<SessionProps> {
       movieId: props.movieId,
       roomId: props.roomId,
       date: sessionDate,
-      timeSlot: TimeSlot.create(props.timeSlot),
+      timeSlot,
       createdAt: now,
       updatedAt: now,
     });
@@ -108,8 +114,9 @@ export class Session extends BaseEntity<SessionProps> {
 
   public isPast(): boolean {
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return this.props.date < now;
+    const sessionDateTime = new Date(this.props.date);
+    sessionDateTime.setHours(this.props.timeSlot.startHour, 0, 0, 0);
+    return sessionDateTime < now;
   }
 
   public isToday(): boolean {
@@ -133,27 +140,32 @@ export class Session extends BaseEntity<SessionProps> {
     date?: Date;
     timeSlot?: TimeSlotEnum;
   }): Session {
+    // Cannot update a past session
+    if (this.isPast()) {
+      throw new DomainException(
+        'Cannot update a session that has already passed',
+      );
+    }
+
     let newDate = this.props.date;
     if (props.date) {
       const sessionDate = new Date(props.date);
       sessionDate.setHours(0, 0, 0, 0);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (sessionDate < today) {
-        throw new DomainException('Session date cannot be in the past');
-      }
       newDate = sessionDate;
     }
+
+    const newTimeSlot = props.timeSlot
+      ? TimeSlot.create(props.timeSlot)
+      : this.props.timeSlot;
+
+    // Validate the new date/time combination is not in the past
+    Session.validateNotInPast(newDate, newTimeSlot);
 
     return new Session(this._id, {
       movieId: this.props.movieId,
       roomId: props.roomId ?? this.props.roomId,
       date: newDate,
-      timeSlot: props.timeSlot
-        ? TimeSlot.create(props.timeSlot)
-        : this.props.timeSlot,
+      timeSlot: newTimeSlot,
       createdAt: this.props.createdAt,
       updatedAt: new Date(),
     });

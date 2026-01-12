@@ -25,6 +25,16 @@ export class TimeSlot extends ValueObject<TimeSlotProps> {
     [TimeSlotEnum.SLOT_22_00]: '22:00-00:00',
   };
 
+  private static readonly SLOT_START_HOURS: Record<TimeSlotEnum, number> = {
+    [TimeSlotEnum.SLOT_10_12]: 10,
+    [TimeSlotEnum.SLOT_12_14]: 12,
+    [TimeSlotEnum.SLOT_14_16]: 14,
+    [TimeSlotEnum.SLOT_16_18]: 16,
+    [TimeSlotEnum.SLOT_18_20]: 18,
+    [TimeSlotEnum.SLOT_20_22]: 20,
+    [TimeSlotEnum.SLOT_22_00]: 22,
+  };
+
   private constructor(props: TimeSlotProps) {
     super(props);
   }
@@ -35,6 +45,10 @@ export class TimeSlot extends ValueObject<TimeSlotProps> {
 
   get label(): string {
     return TimeSlot.SLOT_LABELS[this.props.value];
+  }
+
+  get startHour(): number {
+    return TimeSlot.SLOT_START_HOURS[this.props.value];
   }
 
   public static create(value: TimeSlotEnum): TimeSlot {

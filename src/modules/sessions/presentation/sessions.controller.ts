@@ -110,7 +110,9 @@ export class SessionsController {
     description: 'Session updated successfully',
   })
   @ApiNotFoundResponse({ description: 'Session or Room not found' })
-  @ApiConflictResponse({ description: 'Room already booked for this time slot' })
+  @ApiConflictResponse({
+    description: 'Room already booked for this time slot',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
   async update(
