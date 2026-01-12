@@ -4,11 +4,8 @@ import {
   ApplicationErrorCode,
   ApplicationException,
 } from '../../../../shared/application';
-import {
-  AuditAction,
-  AuditEntityType,
-  AuditService,
-} from '../../../audit/application';
+import { AuditService } from '../../../audit/application';
+import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import { Room } from '../../domain/entities';
 import {
   type IRoomRepository,

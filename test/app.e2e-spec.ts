@@ -414,6 +414,164 @@ describe('Movie Management System (e2e)', () => {
     });
   });
 
+  describe('Rooms', () => {
+    let testRoomId: string;
+
+    describe('POST /rooms/v1', () => {
+      it('should allow manager to create room', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/rooms/v1')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            number: 10,
+            capacity: 100,
+          })
+          .expect(201);
+
+        expect(response.body.number).toBe(10);
+        expect(response.body.capacity).toBe(100);
+        testRoomId = response.body.id;
+      });
+
+      it('should create room with default capacity', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/rooms/v1')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            number: 11,
+          })
+          .expect(201);
+
+        expect(response.body.number).toBe(11);
+        expect(response.body.capacity).toBe(50);
+      });
+
+      it('should reject duplicate room number', async () => {
+        await request(app.getHttpServer())
+          .post('/rooms/v1')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            number: 10,
+            capacity: 100,
+          })
+          .expect(409);
+      });
+
+      it('should reject customer from creating room', async () => {
+        await request(app.getHttpServer())
+          .post('/rooms/v1')
+          .set('Authorization', `Bearer ${customerToken}`)
+          .send({
+            number: 12,
+          })
+          .expect(403);
+      });
+    });
+
+    describe('GET /rooms/v1', () => {
+      it('should list rooms publicly', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/rooms/v1')
+          .expect(200);
+
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe('GET /rooms/v1/:id', () => {
+      it('should get room by id', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/rooms/v1/${testRoomId}`)
+          .expect(200);
+
+        expect(response.body.id).toBe(testRoomId);
+        expect(response.body.number).toBe(10);
+      });
+
+      it('should return 404 for non-existent room', async () => {
+        await request(app.getHttpServer())
+          .get('/rooms/v1/00000000-0000-0000-0000-000000000000')
+          .expect(404);
+      });
+    });
+
+    describe('PUT /rooms/v1/:id', () => {
+      it('should allow manager to update room capacity', async () => {
+        const response = await request(app.getHttpServer())
+          .put(`/rooms/v1/${testRoomId}`)
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            capacity: 150,
+          })
+          .expect(200);
+
+        expect(response.body.id).toBe(testRoomId);
+        expect(response.body.capacity).toBe(150);
+      });
+
+      it('should reject customer from updating room', async () => {
+        await request(app.getHttpServer())
+          .put(`/rooms/v1/${testRoomId}`)
+          .set('Authorization', `Bearer ${customerToken}`)
+          .send({
+            capacity: 200,
+          })
+          .expect(403);
+      });
+
+      it('should return 404 for non-existent room', async () => {
+        await request(app.getHttpServer())
+          .put('/rooms/v1/00000000-0000-0000-0000-000000000000')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            capacity: 100,
+          })
+          .expect(404);
+      });
+    });
+
+    describe('DELETE /rooms/v1/:id', () => {
+      it('should reject customer from deleting room', async () => {
+        await request(app.getHttpServer())
+          .delete(`/rooms/v1/${testRoomId}`)
+          .set('Authorization', `Bearer ${customerToken}`)
+          .expect(403);
+      });
+
+      it('should allow manager to delete room', async () => {
+        // Create a room to delete
+        const createResponse = await request(app.getHttpServer())
+          .post('/rooms/v1')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            number: 999,
+            capacity: 10,
+          })
+          .expect(201);
+
+        const deleteRoomId = createResponse.body.id;
+
+        await request(app.getHttpServer())
+          .delete(`/rooms/v1/${deleteRoomId}`)
+          .set('Authorization', `Bearer ${managerToken}`)
+          .expect(200);
+
+        // Verify it's deleted
+        await request(app.getHttpServer())
+          .get(`/rooms/v1/${deleteRoomId}`)
+          .expect(404);
+      });
+
+      it('should return 404 for non-existent room', async () => {
+        await request(app.getHttpServer())
+          .delete('/rooms/v1/00000000-0000-0000-0000-000000000000')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .expect(404);
+      });
+    });
+  });
+
   describe('Room Capacity', () => {
     it('should prevent ticket purchase when room is full', async () => {
       // Create a room with capacity of 1
