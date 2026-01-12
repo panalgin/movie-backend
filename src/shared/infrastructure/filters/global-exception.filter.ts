@@ -39,8 +39,10 @@ const APPLICATION_ERROR_STATUS_MAP: Record<ApplicationErrorCode, HttpStatus> = {
 
   // Bad Request → 400
   [ApplicationErrorCode.SESSION_IN_PAST]: HttpStatus.BAD_REQUEST,
-  [ApplicationErrorCode.INVALID_CREDENTIALS]: HttpStatus.BAD_REQUEST,
-  [ApplicationErrorCode.INVALID_REFRESH_TOKEN]: HttpStatus.BAD_REQUEST,
+
+  // Unauthorized → 401
+  [ApplicationErrorCode.INVALID_CREDENTIALS]: HttpStatus.UNAUTHORIZED,
+  [ApplicationErrorCode.INVALID_REFRESH_TOKEN]: HttpStatus.UNAUTHORIZED,
 
   // Unauthorized → 401
   [ApplicationErrorCode.UNAUTHORIZED]: HttpStatus.UNAUTHORIZED,
@@ -57,10 +59,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const errorResponse = this.buildErrorResponse(exception);
 
-    this.logger.error(
-      `${errorResponse.code}: ${errorResponse.message}`,
-      exception instanceof Error ? exception.stack : undefined,
-    );
+    // 4xx = client errors (expected), 5xx = server errors (unexpected)
+    if (errorResponse.statusCode >= 500) {
+      this.logger.error(
+        `${errorResponse.code}: ${errorResponse.message}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    } else {
+      this.logger.warn(`${errorResponse.code}: ${errorResponse.message}`);
+    }
 
     response.status(errorResponse.statusCode).json(errorResponse);
   }
