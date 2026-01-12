@@ -1,0 +1,18 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 10
+      arrivalRate: 100
+      name: "Warm up"
+    - duration: 20
+      arrivalRate: 500
+      name: "Ramp up"
+    - duration: 30
+      arrivalRate: 1000
+      name: "Peak load (1000 req/sec)"
+
+scenarios:
+  - name: "Get movies"
+    flow:
+      - get:
+          url: "/movies/v1"

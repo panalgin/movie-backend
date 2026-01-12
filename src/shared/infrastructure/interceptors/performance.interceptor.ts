@@ -9,7 +9,7 @@ import type { Request } from 'express';
 import { Observable, tap } from 'rxjs';
 import { CORRELATION_ID_HEADER } from '../middleware/correlation-id.middleware';
 
-const SLOW_REQUEST_THRESHOLD_MS = 100;
+const SLOW_REQUEST_THRESHOLD_MS = 200;
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; username: string };

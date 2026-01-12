@@ -17,11 +17,13 @@ import {
   CorrelationIdMiddleware,
   PerformanceInterceptor,
   PrismaModule,
+  RedisModule,
 } from './shared/infrastructure';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    RedisModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',

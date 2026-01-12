@@ -79,7 +79,7 @@ export class MoviesController {
 
   @Get()
   @Public()
-  @ApiOperation({ summary: 'Get all movies (Public)' })
+  @ApiOperation({ summary: 'Get all movies (Public, cached 30s with lock)' })
   @ApiResponse({
     status: 200,
     description: 'List of movies',
