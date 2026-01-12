@@ -39,8 +39,6 @@ export class UpdateRoomHandler implements ICommandHandler<UpdateRoomCommand> {
       after: {},
     };
 
-    // Room entity doesn't have update method, we need to create a new one
-    // For now, we'll update via repository directly
     if (command.capacity !== undefined && command.capacity !== room.capacity) {
       changes.before.capacity = room.capacity;
       changes.after.capacity = command.capacity;
@@ -51,16 +49,8 @@ export class UpdateRoomHandler implements ICommandHandler<UpdateRoomCommand> {
       return room;
     }
 
-    const updatedRoom = await this.roomRepository.update(
-      Object.assign(room, {
-        props: {
-          // biome-ignore lint/complexity/useLiteralKeys: props is protected, bracket notation required
-          ...room['props'],
-          capacity: command.capacity,
-          updatedAt: new Date(),
-        },
-      }),
-    );
+    const updated = room.update(command.capacity);
+    const updatedRoom = await this.roomRepository.update(updated);
 
     await this.auditService.logSuccess(
       {

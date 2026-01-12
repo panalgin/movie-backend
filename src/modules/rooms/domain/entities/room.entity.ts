@@ -87,4 +87,21 @@ export class Room extends BaseEntity<RoomProps> {
   public remainingCapacity(currentTicketCount: number): number {
     return Math.max(0, this.props.capacity - currentTicketCount);
   }
+
+  public update(capacity?: number): Room {
+    const newCapacity = capacity ?? this.props.capacity;
+
+    if (newCapacity < 1) {
+      throw new DomainException(
+        DomainErrorCode.INVALID_ROOM_CAPACITY,
+        'Room capacity must be at least 1',
+      );
+    }
+
+    return new Room(this.id, {
+      ...this.props,
+      capacity: newCapacity,
+      updatedAt: new Date(),
+    });
+  }
 }
