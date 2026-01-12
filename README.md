@@ -14,7 +14,7 @@ A NestJS-based movie management API following Domain-Driven Design (DDD) princip
 
 | Type | Tests | Coverage |
 |------|-------|----------|
-| Unit | 118 | Domain entities, value objects, handlers & services |
+| Unit | 120 | Domain entities, value objects, handlers & services |
 | E2E | 26 | Full API integration tests |
 
 ```
@@ -178,7 +178,7 @@ Swagger UI: **http://localhost:3000/swagger**
 
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
-| `POST` | `/tickets/v1` | JWT | Customer | Buy ticket (sends email) |
+| `POST` | `/tickets/v1` | JWT | Customer | Buy tickets (quantity: 1-10, sends email) |
 | `GET` | `/tickets/v1/my` | JWT | Customer | Get my tickets |
 | `GET` | `/tickets/v1/:id` | JWT | Customer | Get ticket by ID |
 
@@ -235,7 +235,7 @@ Sessions use predefined time slots:
 3. **Room Capacity**: Ticket sales are limited by room capacity (sold out when full)
 4. **Ticket Validation**: Users can only watch movies they have tickets for
 5. **Past Session Prevention**: Cannot create/update sessions to past time slots
-6. **Duplicate Ticket Prevention**: Users cannot buy multiple tickets for the same session
+6. **Multiple Ticket Purchase**: Users can buy 1-10 tickets per request (for friends/family)
 
 ## Domain Error Codes
 
