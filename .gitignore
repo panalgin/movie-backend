@@ -51,5 +51,4 @@ Thumbs.db
 .eslintcache
 
 
-# Local seed script
-prisma/seed.local.ts
+Mimari-Kararlar.md
