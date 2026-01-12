@@ -10,7 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "build": "yarn db:generate && ./node_modules/.bin/nest build",
+    "build": "yarn db:generate && tsc -p tsconfig.build.json",
     "format": "biome format --write .",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -51,7 +51,8 @@
     "prisma": "^7.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "@nestjs/cli": "^11.0.0"
+    "@nestjs/cli": "^11.0.0",
+    "typescript": "^5.7.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.11",
@@ -74,8 +75,7 @@
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3"
+    "tsconfig-paths": "^4.2.0"
   },
   "jest": {
     "moduleFileExtensions": [
