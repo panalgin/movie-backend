@@ -52,6 +52,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.client.del(key);
   }
 
+  async ping(): Promise<string> {
+    return this.client.ping();
+  }
+
   /**
    * Try to acquire a lock with random jitter to prevent thundering herd
    */
