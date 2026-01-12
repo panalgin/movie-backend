@@ -34,9 +34,9 @@ export class DeleteSessionHandler
         changes: {
           before: {
             movieId: session.movieId,
+            roomId: session.roomId,
             date: session.date,
             timeSlot: session.timeSlot,
-            roomNumber: session.roomNumber,
           },
         },
       },
