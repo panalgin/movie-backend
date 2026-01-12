@@ -50,7 +50,7 @@ export class TicketsController {
     @Body() dto: BuyTicketDto,
   ) {
     return this.commandBus.execute(
-      new BuyTicketCommand(user.id, dto.sessionId),
+      new BuyTicketCommand(user.id, dto.sessionId, user.role),
     );
   }
 

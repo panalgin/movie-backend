@@ -3,13 +3,21 @@ import {
   ConflictException,
   ForbiddenException,
   Inject,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { AuditService } from '../../../audit/application';
+import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { IUserRepository } from '../../../auth/domain/repositories';
 import { USER_REPOSITORY } from '../../../auth/domain/repositories';
 import type { IMovieRepository } from '../../../movies/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
+import { NotificationService } from '../../../notifications/application';
+import {
+  NotificationChannel,
+  NotificationType,
+} from '../../../notifications/domain/enums';
 import type { ISessionRepository } from '../../../sessions/domain/repositories';
 import { SESSION_REPOSITORY } from '../../../sessions/domain/repositories';
 import { Ticket } from '../../domain/entities';
@@ -19,6 +27,8 @@ import { BuyTicketCommand } from '../commands';
 
 @CommandHandler(BuyTicketCommand)
 export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
+  private readonly logger = new Logger(BuyTicketHandler.name);
+
   constructor(
     @Inject(TICKET_REPOSITORY)
     private readonly ticketRepository: ITicketRepository,
@@ -28,6 +38,8 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
     private readonly movieRepository: IMovieRepository,
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
+    private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async execute(command: BuyTicketCommand): Promise<Ticket> {
@@ -77,6 +89,56 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
       sessionId: command.sessionId,
     });
 
-    return this.ticketRepository.save(ticket);
+    const saved = await this.ticketRepository.save(ticket);
+
+    await this.auditService.logSuccess(
+      {
+        action: AuditAction.TICKET_PURCHASE,
+        entityType: AuditEntityType.TICKET,
+        entityId: saved.id,
+        metadata: {
+          sessionId: session.id,
+          movieId: movie.id,
+          movieTitle: movie.title,
+          sessionDate: session.date,
+          timeSlot: session.timeSlot,
+        },
+      },
+      {
+        actorId: command.userId,
+        actorRole: command.actorRole,
+      },
+    );
+
+    // Send notification (async, non-blocking)
+    this.sendPurchaseNotification(user.email, {
+      movieTitle: movie.title,
+      sessionDate: session.date.toISOString().split('T')[0],
+      timeSlot: session.timeSlot,
+      roomNumber: session.roomNumber,
+      ticketId: saved.id,
+    }).catch((error) => {
+      this.logger.error('Failed to send ticket notification', error);
+    });
+
+    return saved;
+  }
+
+  private async sendPurchaseNotification(
+    email: string,
+    data: {
+      movieTitle: string;
+      sessionDate: string;
+      timeSlot: string;
+      roomNumber: number;
+      ticketId: string;
+    },
+  ): Promise<void> {
+    await this.notificationService.send({
+      type: NotificationType.TICKET_PURCHASED,
+      channels: [NotificationChannel.EMAIL],
+      recipient: { email },
+      data,
+    });
   }
 }

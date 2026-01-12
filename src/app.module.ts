@@ -8,8 +8,11 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuditModule } from './modules/audit';
 import { AuthModule } from './modules/auth';
+import { HealthModule } from './modules/health';
 import { MoviesModule } from './modules/movies';
+import { NotificationsModule } from './modules/notifications';
 import { SessionsModule } from './modules/sessions';
 import { TicketsModule } from './modules/tickets';
 import { WatchModule } from './modules/watch';
@@ -32,6 +35,9 @@ import {
       },
     ]),
     PrismaModule,
+    AuditModule,
+    NotificationsModule,
+    HealthModule,
     AuthModule,
     MoviesModule,
     SessionsModule,
