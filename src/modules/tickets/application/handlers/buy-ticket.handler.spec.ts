@@ -7,10 +7,8 @@ import { AuditService } from '../../../audit/application';
 import { USER_REPOSITORY } from '../../../auth/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
 import { NotificationService } from '../../../notifications/application';
-import {
-  ROOM_REPOSITORY,
-  SESSION_REPOSITORY,
-} from '../../../sessions/domain/repositories';
+import { ROOM_REPOSITORY } from '../../../rooms/domain/repositories';
+import { SESSION_REPOSITORY } from '../../../sessions/domain/repositories';
 import { Ticket } from '../../domain/entities';
 import { TICKET_REPOSITORY } from '../../domain/repositories';
 import { BuyTicketCommand } from '../commands';

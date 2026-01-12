@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth';
 import { HealthModule } from './modules/health';
 import { MoviesModule } from './modules/movies';
 import { NotificationsModule } from './modules/notifications';
+import { RoomsModule } from './modules/rooms';
 import { SessionsModule } from './modules/sessions';
 import { TicketsModule } from './modules/tickets';
 import { WatchModule } from './modules/watch';
@@ -41,6 +42,7 @@ import {
     HealthModule,
     AuthModule,
     MoviesModule,
+    RoomsModule,
     SessionsModule,
     TicketsModule,
     WatchModule,

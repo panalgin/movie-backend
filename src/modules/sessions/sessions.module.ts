@@ -2,17 +2,16 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { MOVIE_REPOSITORY } from '../movies/domain/repositories';
 import { PrismaMovieRepository } from '../movies/infrastructure/persistence';
+import { ROOM_REPOSITORY } from '../rooms/domain/repositories';
+import { PrismaRoomRepository } from '../rooms/infrastructure/persistence';
 import { CommandHandlers, QueryHandlers } from './application/handlers';
-import { ROOM_REPOSITORY, SESSION_REPOSITORY } from './domain/repositories';
-import {
-  PrismaRoomRepository,
-  PrismaSessionRepository,
-} from './infrastructure/persistence';
-import { RoomsController, SessionsController } from './presentation';
+import { SESSION_REPOSITORY } from './domain/repositories';
+import { PrismaSessionRepository } from './infrastructure/persistence';
+import { SessionsController } from './presentation';
 
 @Module({
   imports: [CqrsModule],
-  controllers: [SessionsController, RoomsController],
+  controllers: [SessionsController],
   providers: [
     ...CommandHandlers,
     ...QueryHandlers,
@@ -29,6 +28,6 @@ import { RoomsController, SessionsController } from './presentation';
       useClass: PrismaMovieRepository,
     },
   ],
-  exports: [SESSION_REPOSITORY, ROOM_REPOSITORY],
+  exports: [SESSION_REPOSITORY],
 })
 export class SessionsModule {}

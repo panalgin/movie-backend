@@ -9,12 +9,11 @@ import { AuditService } from '../../../audit/application';
 import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { IMovieRepository } from '../../../movies/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
+import type { IRoomRepository } from '../../../rooms/domain/repositories';
+import { ROOM_REPOSITORY } from '../../../rooms/domain/repositories';
 import { Session } from '../../domain/entities';
-import type {
-  IRoomRepository,
-  ISessionRepository,
-} from '../../domain/repositories';
-import { ROOM_REPOSITORY, SESSION_REPOSITORY } from '../../domain/repositories';
+import type { ISessionRepository } from '../../domain/repositories';
+import { SESSION_REPOSITORY } from '../../domain/repositories';
 import { CreateSessionCommand } from '../commands';
 
 @CommandHandler(CreateSessionCommand)

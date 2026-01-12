@@ -2,8 +2,9 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { ApplicationErrorCode } from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { TimeSlotEnum } from '../../../movies/domain/value-objects';
+import { ROOM_REPOSITORY } from '../../../rooms/domain/repositories';
 import { Session } from '../../domain/entities';
-import { ROOM_REPOSITORY, SESSION_REPOSITORY } from '../../domain/repositories';
+import { SESSION_REPOSITORY } from '../../domain/repositories';
 import { UpdateSessionCommand } from '../commands';
 import { UpdateSessionHandler } from './update-session.handler';
 

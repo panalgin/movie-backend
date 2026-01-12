@@ -3,7 +3,8 @@ import { ApplicationErrorCode } from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
 import { TimeSlotEnum } from '../../../movies/domain/value-objects';
-import { ROOM_REPOSITORY, SESSION_REPOSITORY } from '../../domain/repositories';
+import { ROOM_REPOSITORY } from '../../../rooms/domain/repositories';
+import { SESSION_REPOSITORY } from '../../domain/repositories';
 import { CreateSessionCommand } from '../commands';
 import { CreateSessionHandler } from './create-session.handler';
 
