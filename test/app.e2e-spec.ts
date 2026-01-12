@@ -16,6 +16,7 @@ describe('Movie Management System (e2e)', () => {
   let customerToken: string;
   let managerToken: string;
   let movieId: string;
+  let roomId: string;
   let sessionId: string;
   let ticketId: string;
 
@@ -60,9 +61,19 @@ describe('Movie Management System (e2e)', () => {
     await prisma.ticket.deleteMany();
     await prisma.session.deleteMany();
     await prisma.movie.deleteMany();
+    await prisma.room.deleteMany();
     await prisma.refreshToken.deleteMany();
     await prisma.authProvider.deleteMany();
     await prisma.user.deleteMany();
+
+    // Create default room for tests
+    const room = await prisma.room.create({
+      data: {
+        number: 1,
+        capacity: 50,
+      },
+    });
+    roomId = room.id;
   });
 
   afterAll(async () => {
@@ -71,6 +82,7 @@ describe('Movie Management System (e2e)', () => {
     await prisma.ticket.deleteMany();
     await prisma.session.deleteMany();
     await prisma.movie.deleteMany();
+    await prisma.room.deleteMany();
     await prisma.refreshToken.deleteMany();
     await prisma.authProvider.deleteMany();
     await prisma.user.deleteMany();
@@ -228,13 +240,14 @@ describe('Movie Management System (e2e)', () => {
           .set('Authorization', `Bearer ${managerToken}`)
           .send({
             movieId,
+            roomId,
             date: futureDate.toISOString().split('T')[0],
             timeSlot: TimeSlotEnum.SLOT_14_16,
-            roomNumber: 1,
           })
           .expect(201);
 
         expect(response.body.movieId).toBe(movieId);
+        expect(response.body.roomId).toBe(roomId);
         sessionId = response.body.id;
       });
 
@@ -247,9 +260,9 @@ describe('Movie Management System (e2e)', () => {
           .set('Authorization', `Bearer ${managerToken}`)
           .send({
             movieId,
+            roomId,
             date: futureDate.toISOString().split('T')[0],
             timeSlot: TimeSlotEnum.SLOT_14_16,
-            roomNumber: 1,
           })
           .expect(409);
       });
@@ -346,6 +359,76 @@ describe('Movie Management System (e2e)', () => {
     });
   });
 
+  describe('Room Capacity', () => {
+    it('should prevent ticket purchase when room is full', async () => {
+      // Create a room with capacity of 1
+      const smallRoom = await prisma.room.create({
+        data: {
+          number: 99,
+          capacity: 1,
+        },
+      });
+
+      // Create a movie
+      const capacityMovie = await prisma.movie.create({
+        data: {
+          title: 'Capacity Test Movie',
+          ageRestriction: 0,
+        },
+      });
+
+      // Create a session in the small room
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 10);
+
+      const sessionResponse = await request(app.getHttpServer())
+        .post('/sessions/v1')
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({
+          movieId: capacityMovie.id,
+          roomId: smallRoom.id,
+          date: futureDate.toISOString().split('T')[0],
+          timeSlot: TimeSlotEnum.SLOT_10_12,
+        })
+        .expect(201);
+
+      const capacitySessionId = sessionResponse.body.id;
+
+      // First customer buys ticket - should succeed
+      await request(app.getHttpServer())
+        .post('/tickets/v1')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          sessionId: capacitySessionId,
+        })
+        .expect(201);
+
+      // Create second customer
+      const secondCustomer = {
+        username: 'second_customer',
+        email: 'second@test.com',
+        password: 'password123',
+        age: 25,
+      };
+
+      const secondRegisterResponse = await request(app.getHttpServer())
+        .post('/auth/register/v1')
+        .send(secondCustomer)
+        .expect(201);
+
+      const secondCustomerToken = secondRegisterResponse.body.accessToken;
+
+      // Second customer tries to buy ticket - should fail (sold out)
+      await request(app.getHttpServer())
+        .post('/tickets/v1')
+        .set('Authorization', `Bearer ${secondCustomerToken}`)
+        .send({
+          sessionId: capacitySessionId,
+        })
+        .expect(409);
+    });
+  });
+
   describe('Age Restriction', () => {
     it('should prevent underage user from buying restricted movie ticket', async () => {
       // Create underage user
@@ -375,6 +458,14 @@ describe('Movie Management System (e2e)', () => {
 
       const restrictedMovieId = restrictedMovieResponse.body.id;
 
+      // Create room for restricted session
+      const room2 = await prisma.room.create({
+        data: {
+          number: 2,
+          capacity: 50,
+        },
+      });
+
       // Create session for restricted movie
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 8);
@@ -384,9 +475,9 @@ describe('Movie Management System (e2e)', () => {
         .set('Authorization', `Bearer ${managerToken}`)
         .send({
           movieId: restrictedMovieId,
+          roomId: room2.id,
           date: futureDate.toISOString().split('T')[0],
           timeSlot: TimeSlotEnum.SLOT_20_22,
-          roomNumber: 2,
         })
         .expect(201);
 
