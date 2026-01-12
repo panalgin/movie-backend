@@ -54,7 +54,8 @@ export class UpdateRoomHandler implements ICommandHandler<UpdateRoomCommand> {
     const updatedRoom = await this.roomRepository.update(
       Object.assign(room, {
         props: {
-          ...room.props,
+          // biome-ignore lint/complexity/useLiteralKeys: props is protected, bracket notation required
+          ...room['props'],
           capacity: command.capacity,
           updatedAt: new Date(),
         },
