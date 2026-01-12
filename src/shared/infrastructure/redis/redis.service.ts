@@ -39,8 +39,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Redis disconnected');
   }
 
-  // ============ Cache Operations ============
-
   async get<T>(key: string): Promise<T | null> {
     const value = await this.client.get(key);
     if (!value) return null;
@@ -54,8 +52,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async del(key: string): Promise<void> {
     await this.client.del(key);
   }
-
-  // ============ Lock Operations ============
 
   /**
    * Try to acquire a lock with random jitter to prevent thundering herd
@@ -78,13 +74,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.client.del(lockKey);
   }
 
-  // ============ Cache with Lock ============
-
   /**
    * Get cached value or compute it with lock protection
    * Only one request will compute, others wait for cache to be filled
    */
-  async getOrSet<T>(
+  async getOrSetWithLock<T>(
     key: string,
     factory: () => Promise<T>,
     ttlMs: number,

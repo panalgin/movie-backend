@@ -21,7 +21,7 @@ export class GetMoviesHandler implements IQueryHandler<GetMoviesQuery> {
   async execute(query: GetMoviesQuery): Promise<Movie[]> {
     const cacheKey = this.buildCacheKey(query);
 
-    return this.redis.getOrSet(
+    return this.redis.getOrSetWithLock(
       cacheKey,
       async () => {
         const start = Date.now();
