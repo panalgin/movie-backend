@@ -31,6 +31,7 @@ const APPLICATION_ERROR_STATUS_MAP: Record<ApplicationErrorCode, HttpStatus> = {
   [ApplicationErrorCode.SESSION_SOLD_OUT]: HttpStatus.CONFLICT,
   [ApplicationErrorCode.EMAIL_ALREADY_EXISTS]: HttpStatus.CONFLICT,
   [ApplicationErrorCode.USERNAME_ALREADY_EXISTS]: HttpStatus.CONFLICT,
+  [ApplicationErrorCode.ROOM_NUMBER_EXISTS]: HttpStatus.CONFLICT,
 
   // Forbidden → 403
   [ApplicationErrorCode.USER_UNDERAGE]: HttpStatus.FORBIDDEN,

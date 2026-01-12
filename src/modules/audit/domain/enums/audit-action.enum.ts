@@ -17,6 +17,11 @@ export enum AuditAction {
   SESSION_UPDATE = 'SESSION_UPDATE',
   SESSION_DELETE = 'SESSION_DELETE',
 
+  // Rooms
+  ROOM_CREATE = 'ROOM_CREATE',
+  ROOM_UPDATE = 'ROOM_UPDATE',
+  ROOM_DELETE = 'ROOM_DELETE',
+
   // Tickets
   TICKET_PURCHASE = 'TICKET_PURCHASE',
 }
@@ -30,5 +35,6 @@ export enum AuditEntityType {
   USER = 'User',
   MOVIE = 'Movie',
   SESSION = 'Session',
+  ROOM = 'Room',
   TICKET = 'Ticket',
 }

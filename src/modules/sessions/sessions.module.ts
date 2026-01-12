@@ -8,11 +8,11 @@ import {
   PrismaRoomRepository,
   PrismaSessionRepository,
 } from './infrastructure/persistence';
-import { SessionsController } from './presentation';
+import { RoomsController, SessionsController } from './presentation';
 
 @Module({
   imports: [CqrsModule],
-  controllers: [SessionsController],
+  controllers: [SessionsController, RoomsController],
   providers: [
     ...CommandHandlers,
     ...QueryHandlers,

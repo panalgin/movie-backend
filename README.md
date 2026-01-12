@@ -219,6 +219,16 @@ This enables **granular evolution** - each resource can advance to v2 independen
 | `PUT` | `/sessions/v1/:id` | JWT | Manager | Update session |
 | `DELETE` | `/sessions/v1/:id` | JWT | Manager | Delete session |
 
+### Rooms
+
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| `GET` | `/rooms/v1` | Public | - | List rooms |
+| `GET` | `/rooms/v1/:id` | Public | - | Get room by ID |
+| `POST` | `/rooms/v1` | JWT | Manager | Create room |
+| `PUT` | `/rooms/v1/:id` | JWT | Manager | Update room capacity |
+| `DELETE` | `/rooms/v1/:id` | JWT | Manager | Delete room |
+
 ### Tickets
 
 | Method | Endpoint | Auth | Role | Description |
