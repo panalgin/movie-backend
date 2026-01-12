@@ -14,13 +14,15 @@ A NestJS-based movie management API following Domain-Driven Design (DDD) princip
 
 | Type | Tests | Coverage |
 |------|-------|----------|
-| Unit | 72 | Domain entities & value objects |
-| E2E | 23 | Full API integration tests |
+| Unit | 118 | Domain entities, value objects, handlers & services |
+| E2E | 26 | Full API integration tests |
 
 ```
 Domain Layer Coverage:
-├── Entities:     ~90% (User, Movie, Session, Ticket, WatchHistory)
+├── Entities:     ~90% (User, Movie, Session, Room, Ticket, WatchHistory)
 ├── Value Objects: 100% (UserAge, TimeSlot, AgeRestriction)
+├── Handlers:     ~85% (BuyTicket, CreateSession, UpdateSession, WatchMovie)
+├── Services:     ~90% (AuthService)
 └── Base Classes:  ~50% (BaseEntity, BaseValueObject)
 ```
 
@@ -31,7 +33,8 @@ Domain Layer Coverage:
 - **Role-Based Access Control**: Manager and Customer roles
 - **Movie Management**: Full CRUD with age restrictions
 - **Session Management**: Time slots with double-booking prevention
-- **Ticket System**: Age verification and purchase validation
+- **Room Management**: Capacity tracking and seat availability
+- **Ticket System**: Age verification, capacity check, and purchase validation
 - **Watch History**: Track watched movies with valid tickets
 - **Bulk Operations**: Batch create/delete movies
 
@@ -41,6 +44,7 @@ Domain Layer Coverage:
 - **Notifications**: Email (SendGrid) and SMS (Twilio) support
 - **Caching**: Redis with thundering herd protection
 - **Rate Limiting**: Throttling on sensitive endpoints
+- **Typed Domain Errors**: Error codes for type-safe exception handling
 
 ## Tech Stack
 
@@ -69,7 +73,8 @@ src/
 │   ├── domain/
 │   │   ├── base.entity.ts               # Base entity class
 │   │   ├── base.value-object.ts         # Base value object class
-│   │   └── domain.exception.ts          # Domain exceptions
+│   │   ├── domain.exception.ts          # Domain exceptions
+│   │   └── domain-error-code.enum.ts    # Typed error codes
 │   └── infrastructure/
 │       ├── prisma/                      # Database layer
 │       └── redis/                       # Cache layer
@@ -107,6 +112,9 @@ src/
     │       └── movies.controller.ts
     │
     ├── sessions/                        # Sessions Bounded Context
+    │   ├── domain/
+    │   │   └── entities/                # Session, Room entities
+    │   └── ...
     ├── tickets/                         # Tickets Bounded Context
     ├── watch/                           # Watch History Bounded Context
     │
@@ -163,6 +171,7 @@ Swagger UI: **http://localhost:3000/swagger**
 | `GET` | `/sessions/v1` | Public | - | List sessions |
 | `GET` | `/sessions/v1/:id` | Public | - | Get session by ID |
 | `POST` | `/sessions/v1` | JWT | Manager | Create session |
+| `PUT` | `/sessions/v1/:id` | JWT | Manager | Update session |
 | `DELETE` | `/sessions/v1/:id` | JWT | Manager | Delete session |
 
 ### Tickets
@@ -198,7 +207,7 @@ Swagger UI: **http://localhost:3000/swagger**
 |-----------|------|-------------|
 | `movieId` | uuid | Filter by movie |
 | `date` | date | Filter by date |
-| `roomNumber` | number | Filter by room |
+| `roomId` | uuid | Filter by room |
 
 ## Time Slots
 
@@ -223,8 +232,23 @@ Sessions use predefined time slots:
 
 1. **Age Restriction**: Users cannot buy tickets for movies with age restriction higher than their age
 2. **Double-Booking Prevention**: Same room cannot be booked for the same date and time slot
-3. **Ticket Validation**: Users can only watch movies they have tickets for
-4. **Past Session Prevention**: Cannot buy tickets for past sessions
+3. **Room Capacity**: Ticket sales are limited by room capacity (sold out when full)
+4. **Ticket Validation**: Users can only watch movies they have tickets for
+5. **Past Session Prevention**: Cannot create/update sessions to past time slots
+6. **Duplicate Ticket Prevention**: Users cannot buy multiple tickets for the same session
+
+## Domain Error Codes
+
+The API uses typed error codes for consistent error handling:
+
+| Category | Code | Description |
+|----------|------|-------------|
+| Validation | `MOVIE_TITLE_REQUIRED` | Movie title is required |
+| Validation | `INVALID_EMAIL_FORMAT` | Invalid email format |
+| Validation | `USERNAME_TOO_SHORT` | Username too short |
+| Validation | `INVALID_AGE` | Age out of valid range |
+| Validation | `INVALID_TIME_SLOT` | Invalid time slot value |
+| Business | `SESSION_IN_PAST` | Session time is in the past |
 
 ## Audit Events
 
@@ -240,6 +264,7 @@ All significant actions are logged to the `audit_logs` table:
 | `MOVIE_UPDATE` | Movie updated |
 | `MOVIE_DELETE` | Movie deleted |
 | `SESSION_CREATE` | Session created |
+| `SESSION_UPDATE` | Session updated |
 | `SESSION_DELETE` | Session deleted |
 | `TICKET_PURCHASE` | Ticket purchased |
 
@@ -342,6 +367,7 @@ yarn test:cov
 - **Rich Domain Models**: Entities with business logic
 - **Value Objects**: TimeSlot, AgeRestriction, UserAge
 - **Repository Pattern**: Abstract persistence layer
+- **Typed Domain Errors**: Error codes for type-safe exception handling
 
 ### CQRS Pattern
 
