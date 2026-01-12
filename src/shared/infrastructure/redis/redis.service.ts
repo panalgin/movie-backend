@@ -34,8 +34,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.client.quit();
-    this.logger.log('Redis disconnected');
+    if (this.client) {
+      await this.client.quit();
+      this.logger.log('Redis disconnected');
+    }
   }
 
   async get<T>(key: string): Promise<T | null> {
