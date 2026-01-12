@@ -1,5 +1,9 @@
-import { ForbiddenException, Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import type { Ticket } from '../../domain/entities';
 import type { ITicketRepository } from '../../domain/repositories';
 import { TICKET_REPOSITORY } from '../../domain/repositories';
@@ -16,11 +20,19 @@ export class GetTicketByIdHandler implements IQueryHandler<GetTicketByIdQuery> {
     const ticket = await this.ticketRepository.findById(query.id);
 
     if (!ticket) {
-      throw new NotFoundException(`Ticket with ID ${query.id} not found`);
+      throw new ApplicationException(
+        ApplicationErrorCode.TICKET_NOT_FOUND,
+        `Ticket with ID ${query.id} not found`,
+        { ticketId: query.id },
+      );
     }
 
     if (!ticket.belongsTo(query.userId)) {
-      throw new ForbiddenException('This ticket does not belong to you');
+      throw new ApplicationException(
+        ApplicationErrorCode.TICKET_NOT_OWNED,
+        'This ticket does not belong to you',
+        { ticketId: query.id, userId: query.userId },
+      );
     }
 
     return ticket;

@@ -1,5 +1,9 @@
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import type { Session } from '../../domain/entities';
 import type { ISessionRepository } from '../../domain/repositories';
 import { SESSION_REPOSITORY } from '../../domain/repositories';
@@ -18,7 +22,11 @@ export class GetSessionByIdHandler
     const session = await this.sessionRepository.findById(query.id);
 
     if (!session) {
-      throw new NotFoundException(`Session with ID ${query.id} not found`);
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_NOT_FOUND,
+        `Session with ID ${query.id} not found`,
+        { sessionId: query.id },
+      );
     }
 
     return session;

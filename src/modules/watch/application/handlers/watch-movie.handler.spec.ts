@@ -1,5 +1,5 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { ApplicationErrorCode } from '../../../../shared/application';
 import { SESSION_REPOSITORY } from '../../../sessions/domain/repositories';
 import { TICKET_REPOSITORY } from '../../../tickets/domain/repositories';
 import { WATCH_HISTORY_REPOSITORY } from '../../domain/repositories';
@@ -39,6 +39,9 @@ describe('WatchMovieHandler', () => {
       findById: jest.fn().mockResolvedValue(mockSession),
     };
 
+    // Reset mock
+    mockTicket.belongsTo.mockReturnValue(true);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WatchMovieHandler,
@@ -62,39 +65,39 @@ describe('WatchMovieHandler', () => {
     expect(watchHistoryRepository.save).toHaveBeenCalled();
   });
 
-  it('should throw NotFoundException if ticket not found', async () => {
+  it('should throw ApplicationException if ticket not found', async () => {
     ticketRepository.findById.mockResolvedValue(null);
 
     const command = new WatchMovieCommand('user-id', 'ticket-id');
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Ticket with ID ticket-id not found',
+      expect.objectContaining({
+        code: ApplicationErrorCode.TICKET_NOT_FOUND,
+      }),
     );
   });
 
-  it('should throw ForbiddenException if ticket does not belong to user', async () => {
+  it('should throw ApplicationException if ticket does not belong to user', async () => {
     mockTicket.belongsTo.mockReturnValue(false);
-    ticketRepository.findById.mockResolvedValue(mockTicket);
 
     const command = new WatchMovieCommand('different-user-id', 'ticket-id');
 
-    await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'This ticket does not belong to you',
+      expect.objectContaining({
+        code: ApplicationErrorCode.TICKET_NOT_OWNED,
+      }),
     );
-
-    mockTicket.belongsTo.mockReturnValue(true);
   });
 
-  it('should throw NotFoundException if session not found', async () => {
+  it('should throw ApplicationException if session not found', async () => {
     sessionRepository.findById.mockResolvedValue(null);
 
     const command = new WatchMovieCommand('user-id', 'ticket-id');
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Session not found for this ticket',
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_NOT_FOUND,
+      }),
     );
   });
 });

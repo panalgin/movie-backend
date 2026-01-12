@@ -1,5 +1,9 @@
-import { ForbiddenException, Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import type { ISessionRepository } from '../../../sessions/domain/repositories';
 import { SESSION_REPOSITORY } from '../../../sessions/domain/repositories';
 import type { ITicketRepository } from '../../../tickets/domain/repositories';
@@ -24,20 +28,30 @@ export class WatchMovieHandler implements ICommandHandler<WatchMovieCommand> {
     // Check if ticket exists
     const ticket = await this.ticketRepository.findById(command.ticketId);
     if (!ticket) {
-      throw new NotFoundException(
+      throw new ApplicationException(
+        ApplicationErrorCode.TICKET_NOT_FOUND,
         `Ticket with ID ${command.ticketId} not found`,
+        { ticketId: command.ticketId },
       );
     }
 
     // Check if ticket belongs to user
     if (!ticket.belongsTo(command.userId)) {
-      throw new ForbiddenException('This ticket does not belong to you');
+      throw new ApplicationException(
+        ApplicationErrorCode.TICKET_NOT_OWNED,
+        'This ticket does not belong to you',
+        { ticketId: command.ticketId, userId: command.userId },
+      );
     }
 
     // Get session to get movie ID
     const session = await this.sessionRepository.findById(ticket.sessionId);
     if (!session) {
-      throw new NotFoundException('Session not found for this ticket');
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_NOT_FOUND,
+        'Session not found for this ticket',
+        { sessionId: ticket.sessionId },
+      );
     }
 
     // Create watch history entry

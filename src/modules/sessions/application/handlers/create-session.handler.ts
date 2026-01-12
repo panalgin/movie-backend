@@ -1,6 +1,10 @@
-import { ConflictException, Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { Prisma } from '@prisma/client';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { IMovieRepository } from '../../../movies/domain/repositories';
@@ -31,13 +35,21 @@ export class CreateSessionHandler
     // Check if movie exists
     const movie = await this.movieRepository.findById(command.movieId);
     if (!movie) {
-      throw new NotFoundException(`Movie with ID ${command.movieId} not found`);
+      throw new ApplicationException(
+        ApplicationErrorCode.MOVIE_NOT_FOUND,
+        `Movie with ID ${command.movieId} not found`,
+        { movieId: command.movieId },
+      );
     }
 
     // Check if room exists
     const room = await this.roomRepository.findById(command.roomId);
     if (!room) {
-      throw new NotFoundException(`Room with ID ${command.roomId} not found`);
+      throw new ApplicationException(
+        ApplicationErrorCode.ROOM_NOT_FOUND,
+        `Room with ID ${command.roomId} not found`,
+        { roomId: command.roomId },
+      );
     }
 
     // Check for double-booking
@@ -48,8 +60,14 @@ export class CreateSessionHandler
     );
 
     if (hasConflict) {
-      throw new ConflictException(
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_CONFLICT,
         `Room ${room.number} is already booked for this time slot on this date`,
+        {
+          roomId: command.roomId,
+          date: command.date,
+          timeSlot: command.timeSlot,
+        },
       );
     }
 
@@ -91,8 +109,14 @@ export class CreateSessionHandler
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException(
+        throw new ApplicationException(
+          ApplicationErrorCode.SESSION_CONFLICT,
           `Room ${room.number} is already booked for this time slot on this date`,
+          {
+            roomId: command.roomId,
+            date: command.date,
+            timeSlot: command.timeSlot,
+          },
         );
       }
       throw error;

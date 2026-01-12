@@ -1,5 +1,9 @@
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { Movie } from '../../domain/entities';
@@ -19,7 +23,11 @@ export class DeleteMovieHandler implements ICommandHandler<DeleteMovieCommand> {
     const movie = await this.movieRepository.findById(command.id);
 
     if (!movie) {
-      throw new NotFoundException(`Movie with ID ${command.id} not found`);
+      throw new ApplicationException(
+        ApplicationErrorCode.MOVIE_NOT_FOUND,
+        `Movie with ID ${command.id} not found`,
+        { movieId: command.id },
+      );
     }
 
     await this.movieRepository.delete(command.id);

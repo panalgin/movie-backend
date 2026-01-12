@@ -1,7 +1,7 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+import { ApplicationErrorCode } from '../../../shared/application';
 import { PrismaService } from '../../../shared/infrastructure/prisma';
 import { AuditService } from '../../audit/application';
 import { UserRole } from '../domain/entities';
@@ -91,7 +91,7 @@ describe('AuthService', () => {
       expect(result.refreshToken).toBeDefined();
     });
 
-    it('should throw ConflictException for duplicate email', async () => {
+    it('should throw ApplicationException for duplicate email', async () => {
       userRepository.existsByEmail.mockResolvedValue(true);
 
       await expect(
@@ -101,18 +101,14 @@ describe('AuthService', () => {
           password: 'password123',
           age: 25,
         }),
-      ).rejects.toThrow(ConflictException);
-      await expect(
-        service.register({
-          username: 'testuser',
-          email: 'test@test.com',
-          password: 'password123',
-          age: 25,
+      ).rejects.toThrow(
+        expect.objectContaining({
+          code: ApplicationErrorCode.EMAIL_ALREADY_EXISTS,
         }),
-      ).rejects.toThrow('Email already registered');
+      );
     });
 
-    it('should throw ConflictException for duplicate username', async () => {
+    it('should throw ApplicationException for duplicate username', async () => {
       userRepository.existsByUsername.mockResolvedValue(true);
 
       await expect(
@@ -122,15 +118,11 @@ describe('AuthService', () => {
           password: 'password123',
           age: 25,
         }),
-      ).rejects.toThrow(ConflictException);
-      await expect(
-        service.register({
-          username: 'testuser',
-          email: 'test@test.com',
-          password: 'password123',
-          age: 25,
+      ).rejects.toThrow(
+        expect.objectContaining({
+          code: ApplicationErrorCode.USERNAME_ALREADY_EXISTS,
         }),
-      ).rejects.toThrow('Username already taken');
+      );
     });
   });
 
@@ -148,7 +140,7 @@ describe('AuthService', () => {
       expect(result.accessToken).toBe('access-token');
     });
 
-    it('should throw UnauthorizedException for invalid email', async () => {
+    it('should throw ApplicationException for invalid email', async () => {
       (
         prismaService.user as Record<string, jest.Mock>
       ).findUnique.mockResolvedValue(null);
@@ -158,16 +150,14 @@ describe('AuthService', () => {
           email: 'wrong@test.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(UnauthorizedException);
-      await expect(
-        service.login({
-          email: 'wrong@test.com',
-          password: 'password123',
+      ).rejects.toThrow(
+        expect.objectContaining({
+          code: ApplicationErrorCode.INVALID_CREDENTIALS,
         }),
-      ).rejects.toThrow('Invalid credentials');
+      );
     });
 
-    it('should throw UnauthorizedException for invalid password', async () => {
+    it('should throw ApplicationException for invalid password', async () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
@@ -175,13 +165,11 @@ describe('AuthService', () => {
           email: 'test@test.com',
           password: 'wrongpassword',
         }),
-      ).rejects.toThrow(UnauthorizedException);
-      await expect(
-        service.login({
-          email: 'test@test.com',
-          password: 'wrongpassword',
+      ).rejects.toThrow(
+        expect.objectContaining({
+          code: ApplicationErrorCode.INVALID_CREDENTIALS,
         }),
-      ).rejects.toThrow('Invalid credentials');
+      );
     });
   });
 
@@ -206,20 +194,19 @@ describe('AuthService', () => {
       ).toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedException for invalid token', async () => {
+    it('should throw ApplicationException for invalid token', async () => {
       (
         prismaService.refreshToken as Record<string, jest.Mock>
       ).findUnique.mockResolvedValue(null);
 
       await expect(service.refreshTokens('invalid-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
-      await expect(service.refreshTokens('invalid-token')).rejects.toThrow(
-        'Invalid refresh token',
+        expect.objectContaining({
+          code: ApplicationErrorCode.INVALID_REFRESH_TOKEN,
+        }),
       );
     });
 
-    it('should throw UnauthorizedException for expired token', async () => {
+    it('should throw ApplicationException for expired token', async () => {
       const expiredToken = {
         id: 'token-id',
         token: 'expired-token',
@@ -231,10 +218,9 @@ describe('AuthService', () => {
       ).findUnique.mockResolvedValue(expiredToken);
 
       await expect(service.refreshTokens('expired-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
-      await expect(service.refreshTokens('expired-token')).rejects.toThrow(
-        'Refresh token expired',
+        expect.objectContaining({
+          code: ApplicationErrorCode.TOKEN_EXPIRED,
+        }),
       );
     });
   });

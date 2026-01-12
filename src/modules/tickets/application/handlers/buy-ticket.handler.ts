@@ -1,12 +1,9 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { IUserRepository } from '../../../auth/domain/repositories';
@@ -56,39 +53,59 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
     // Check if session exists
     const session = await this.sessionRepository.findById(command.sessionId);
     if (!session) {
-      throw new NotFoundException(
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_NOT_FOUND,
         `Session with ID ${command.sessionId} not found`,
+        { sessionId: command.sessionId },
       );
     }
 
     // Check if session is not in the past
     if (session.isPast()) {
-      throw new BadRequestException('Cannot buy ticket for a past session');
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_IN_PAST,
+        'Cannot buy ticket for a past session',
+        { sessionId: command.sessionId },
+      );
     }
 
     // Get the movie for age restriction check
     const movie = await this.movieRepository.findById(session.movieId);
     if (!movie) {
-      throw new NotFoundException('Movie not found for this session');
+      throw new ApplicationException(
+        ApplicationErrorCode.MOVIE_NOT_FOUND,
+        'Movie not found for this session',
+        { movieId: session.movieId },
+      );
     }
 
     // Get user for age check
     const user = await this.userRepository.findById(command.userId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new ApplicationException(
+        ApplicationErrorCode.USER_NOT_FOUND,
+        'User not found',
+        { userId: command.userId },
+      );
     }
 
     // Check age restriction
     if (!movie.canBeWatchedBy(user.age)) {
-      throw new ForbiddenException(
+      throw new ApplicationException(
+        ApplicationErrorCode.USER_UNDERAGE,
         `You must be at least ${movie.ageRestriction} years old to buy a ticket for this movie`,
+        { userAge: user.age, requiredAge: movie.ageRestriction },
       );
     }
 
     // Get room for capacity check
     const room = await this.roomRepository.findById(session.roomId);
     if (!room) {
-      throw new NotFoundException('Room not found for this session');
+      throw new ApplicationException(
+        ApplicationErrorCode.ROOM_NOT_FOUND,
+        'Room not found for this session',
+        { roomId: session.roomId },
+      );
     }
 
     // Check room capacity
@@ -98,8 +115,10 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
     const availableSeats = room.remainingCapacity(currentTicketCount);
 
     if (availableSeats < quantity) {
-      throw new ConflictException(
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_SOLD_OUT,
         `Not enough seats available. Available: ${availableSeats}, Requested: ${quantity}`,
+        { available: availableSeats, requested: quantity },
       );
     }
 

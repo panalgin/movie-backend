@@ -1,10 +1,8 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { USER_REPOSITORY } from '../../../auth/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
@@ -165,7 +163,7 @@ describe('BuyTicketHandler', () => {
     expect(result2).toHaveLength(1);
   });
 
-  it('should throw NotFoundException if session not found', async () => {
+  it('should throw ApplicationException if session not found', async () => {
     sessionRepository.findById.mockResolvedValue(null);
 
     const command = new BuyTicketCommand(
@@ -175,10 +173,14 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+    await expect(handler.execute(command)).rejects.toThrow(
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_NOT_FOUND,
+      }),
+    );
   });
 
-  it('should throw BadRequestException for past session', async () => {
+  it('should throw ApplicationException for past session', async () => {
     mockSession.isPast.mockReturnValue(true);
 
     const command = new BuyTicketCommand(
@@ -188,10 +190,14 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(BadRequestException);
+    await expect(handler.execute(command)).rejects.toThrow(
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_IN_PAST,
+      }),
+    );
   });
 
-  it('should throw NotFoundException if movie not found', async () => {
+  it('should throw ApplicationException if movie not found', async () => {
     movieRepository.findById.mockResolvedValue(null);
 
     const command = new BuyTicketCommand(
@@ -201,10 +207,14 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+    await expect(handler.execute(command)).rejects.toThrow(
+      expect.objectContaining({
+        code: ApplicationErrorCode.MOVIE_NOT_FOUND,
+      }),
+    );
   });
 
-  it('should throw NotFoundException if user not found', async () => {
+  it('should throw ApplicationException if user not found', async () => {
     userRepository.findById.mockResolvedValue(null);
 
     const command = new BuyTicketCommand(
@@ -214,10 +224,14 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+    await expect(handler.execute(command)).rejects.toThrow(
+      expect.objectContaining({
+        code: ApplicationErrorCode.USER_NOT_FOUND,
+      }),
+    );
   });
 
-  it('should throw ForbiddenException for age restriction', async () => {
+  it('should throw ApplicationException for age restriction', async () => {
     mockMovie.canBeWatchedBy.mockReturnValue(false);
 
     const command = new BuyTicketCommand(
@@ -227,10 +241,14 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(ForbiddenException);
+    await expect(handler.execute(command)).rejects.toThrow(
+      expect.objectContaining({
+        code: ApplicationErrorCode.USER_UNDERAGE,
+      }),
+    );
   });
 
-  it('should throw NotFoundException if room not found', async () => {
+  it('should throw ApplicationException if room not found', async () => {
     roomRepository.findById.mockResolvedValue(null);
 
     const command = new BuyTicketCommand(
@@ -240,10 +258,14 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
+    await expect(handler.execute(command)).rejects.toThrow(
+      expect.objectContaining({
+        code: ApplicationErrorCode.ROOM_NOT_FOUND,
+      }),
+    );
   });
 
-  it('should throw ConflictException when not enough seats for quantity', async () => {
+  it('should throw ApplicationException when not enough seats for quantity', async () => {
     mockRoom.remainingCapacity.mockReturnValue(2);
 
     const command = new BuyTicketCommand(
@@ -253,13 +275,17 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(ConflictException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Not enough seats available',
+      ApplicationException,
+    );
+    await expect(handler.execute(command)).rejects.toThrow(
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_SOLD_OUT,
+      }),
     );
   });
 
-  it('should throw ConflictException when session is sold out', async () => {
+  it('should throw ApplicationException when session is sold out', async () => {
     mockRoom.remainingCapacity.mockReturnValue(0);
 
     const command = new BuyTicketCommand(
@@ -269,9 +295,10 @@ describe('BuyTicketHandler', () => {
       'CUSTOMER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(ConflictException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Not enough seats available',
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_SOLD_OUT,
+      }),
     );
   });
 });

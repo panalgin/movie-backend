@@ -1,5 +1,5 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { ApplicationErrorCode } from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { TimeSlotEnum } from '../../../movies/domain/value-objects';
 import { Session } from '../../domain/entities';
@@ -95,7 +95,7 @@ describe('UpdateSessionHandler', () => {
     expect(result.timeSlot).toBe(TimeSlotEnum.SLOT_18_20);
   });
 
-  it('should throw NotFoundException if session not found', async () => {
+  it('should throw ApplicationException if session not found', async () => {
     sessionRepository.findById.mockResolvedValue(null);
 
     const command = new UpdateSessionCommand(
@@ -107,13 +107,14 @@ describe('UpdateSessionHandler', () => {
       'MANAGER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Session with ID non-existent-id not found',
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_NOT_FOUND,
+      }),
     );
   });
 
-  it('should throw NotFoundException if new room not found', async () => {
+  it('should throw ApplicationException if new room not found', async () => {
     roomRepository.findById.mockResolvedValue(null);
 
     const command = new UpdateSessionCommand(
@@ -125,13 +126,14 @@ describe('UpdateSessionHandler', () => {
       'MANAGER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Room with ID non-existent-room not found',
+      expect.objectContaining({
+        code: ApplicationErrorCode.ROOM_NOT_FOUND,
+      }),
     );
   });
 
-  it('should throw ConflictException for double-booking', async () => {
+  it('should throw ApplicationException for double-booking', async () => {
     sessionRepository.existsConflict.mockResolvedValue(true);
 
     const command = new UpdateSessionCommand(
@@ -143,9 +145,10 @@ describe('UpdateSessionHandler', () => {
       'MANAGER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(ConflictException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'This room is already booked for this time slot on this date',
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_CONFLICT,
+      }),
     );
   });
 });

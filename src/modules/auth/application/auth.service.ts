@@ -1,13 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ProviderType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../shared/application';
 import { PrismaService } from '../../../shared/infrastructure/prisma';
 import { AuditService } from '../../audit/application';
 import { AuditAction, AuditEntityType } from '../../audit/domain/enums';
@@ -46,12 +45,20 @@ export class AuthService {
   ): Promise<AuthResponseDto> {
     // Check if email exists
     if (await this.userRepository.existsByEmail(dto.email)) {
-      throw new ConflictException('Email already registered');
+      throw new ApplicationException(
+        ApplicationErrorCode.EMAIL_ALREADY_EXISTS,
+        'Email already registered',
+        { email: dto.email },
+      );
     }
 
     // Check if username exists
     if (await this.userRepository.existsByUsername(dto.username)) {
-      throw new ConflictException('Username already taken');
+      throw new ApplicationException(
+        ApplicationErrorCode.USERNAME_ALREADY_EXISTS,
+        'Username already taken',
+        { username: dto.username },
+      );
     }
 
     // Create domain user
@@ -136,7 +143,10 @@ export class AuthService {
         },
         { ipAddress: context.ipAddress, userAgent: context.userAgent },
       );
-      throw new UnauthorizedException('Invalid credentials');
+      throw new ApplicationException(
+        ApplicationErrorCode.INVALID_CREDENTIALS,
+        'Invalid credentials',
+      );
     }
 
     const authProvider = prismaUser.authProviders[0];
@@ -154,7 +164,10 @@ export class AuthService {
           userAgent: context.userAgent,
         },
       );
-      throw new UnauthorizedException('Invalid credentials');
+      throw new ApplicationException(
+        ApplicationErrorCode.INVALID_CREDENTIALS,
+        'Invalid credentials',
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -176,7 +189,10 @@ export class AuthService {
           userAgent: context.userAgent,
         },
       );
-      throw new UnauthorizedException('Invalid credentials');
+      throw new ApplicationException(
+        ApplicationErrorCode.INVALID_CREDENTIALS,
+        'Invalid credentials',
+      );
     }
 
     const user = User.reconstitute(prismaUser.id, {
@@ -214,12 +230,18 @@ export class AuthService {
     });
 
     if (!storedToken) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new ApplicationException(
+        ApplicationErrorCode.INVALID_REFRESH_TOKEN,
+        'Invalid refresh token',
+      );
     }
 
     if (storedToken.expiresAt < new Date()) {
       await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
-      throw new UnauthorizedException('Refresh token expired');
+      throw new ApplicationException(
+        ApplicationErrorCode.TOKEN_EXPIRED,
+        'Refresh token expired',
+      );
     }
 
     // Delete old refresh token

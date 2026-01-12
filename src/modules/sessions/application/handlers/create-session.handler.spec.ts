@@ -1,5 +1,5 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { ApplicationErrorCode } from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
 import { TimeSlotEnum } from '../../../movies/domain/value-objects';
@@ -76,7 +76,7 @@ describe('CreateSessionHandler', () => {
     expect(sessionRepository.save).toHaveBeenCalled();
   });
 
-  it('should throw NotFoundException if movie not found', async () => {
+  it('should throw ApplicationException if movie not found', async () => {
     movieRepository.findById.mockResolvedValue(null);
 
     const command = new CreateSessionCommand(
@@ -88,13 +88,14 @@ describe('CreateSessionHandler', () => {
       'MANAGER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Movie with ID movie-id not found',
+      expect.objectContaining({
+        code: ApplicationErrorCode.MOVIE_NOT_FOUND,
+      }),
     );
   });
 
-  it('should throw NotFoundException if room not found', async () => {
+  it('should throw ApplicationException if room not found', async () => {
     roomRepository.findById.mockResolvedValue(null);
 
     const command = new CreateSessionCommand(
@@ -106,13 +107,14 @@ describe('CreateSessionHandler', () => {
       'MANAGER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Room with ID room-id not found',
+      expect.objectContaining({
+        code: ApplicationErrorCode.ROOM_NOT_FOUND,
+      }),
     );
   });
 
-  it('should throw ConflictException for double-booking', async () => {
+  it('should throw ApplicationException for double-booking', async () => {
     sessionRepository.existsConflict.mockResolvedValue(true);
 
     const command = new CreateSessionCommand(
@@ -124,9 +126,10 @@ describe('CreateSessionHandler', () => {
       'MANAGER',
     );
 
-    await expect(handler.execute(command)).rejects.toThrow(ConflictException);
     await expect(handler.execute(command)).rejects.toThrow(
-      'Room 1 is already booked for this time slot on this date',
+      expect.objectContaining({
+        code: ApplicationErrorCode.SESSION_CONFLICT,
+      }),
     );
   });
 });

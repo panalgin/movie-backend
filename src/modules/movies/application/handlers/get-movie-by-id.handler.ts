@@ -1,5 +1,9 @@
-import { Inject, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import { RedisService } from '../../../../shared/infrastructure';
 import type { Movie } from '../../domain/entities';
 import type { IMovieRepository } from '../../domain/repositories';
@@ -29,7 +33,11 @@ export class GetMovieByIdHandler implements IQueryHandler<GetMovieByIdQuery> {
         const movie = await this.movieRepository.findById(query.id);
 
         if (!movie) {
-          throw new NotFoundException(`Movie with ID ${query.id} not found`);
+          throw new ApplicationException(
+            ApplicationErrorCode.MOVIE_NOT_FOUND,
+            `Movie with ID ${query.id} not found`,
+            { movieId: query.id },
+          );
         }
 
         this.logger.warn(

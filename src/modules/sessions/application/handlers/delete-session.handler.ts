@@ -1,5 +1,9 @@
-import { Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { Session } from '../../domain/entities';
@@ -21,7 +25,11 @@ export class DeleteSessionHandler
     const session = await this.sessionRepository.findById(command.id);
 
     if (!session) {
-      throw new NotFoundException(`Session with ID ${command.id} not found`);
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_NOT_FOUND,
+        `Session with ID ${command.id} not found`,
+        { sessionId: command.id },
+      );
     }
 
     await this.sessionRepository.delete(command.id);

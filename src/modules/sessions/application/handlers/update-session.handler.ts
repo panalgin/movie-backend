@@ -1,6 +1,10 @@
-import { ConflictException, Inject, NotFoundException } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { Prisma } from '@prisma/client';
+import {
+  ApplicationErrorCode,
+  ApplicationException,
+} from '../../../../shared/application';
 import { AuditService } from '../../../audit/application';
 import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { Session } from '../../domain/entities';
@@ -27,7 +31,11 @@ export class UpdateSessionHandler
     // Check if session exists
     const session = await this.sessionRepository.findById(command.id);
     if (!session) {
-      throw new NotFoundException(`Session with ID ${command.id} not found`);
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_NOT_FOUND,
+        `Session with ID ${command.id} not found`,
+        { sessionId: command.id },
+      );
     }
 
     // If roomId is being changed, verify the new room exists
@@ -35,7 +43,11 @@ export class UpdateSessionHandler
     if (command.roomId && command.roomId !== session.roomId) {
       const room = await this.roomRepository.findById(command.roomId);
       if (!room) {
-        throw new NotFoundException(`Room with ID ${command.roomId} not found`);
+        throw new ApplicationException(
+          ApplicationErrorCode.ROOM_NOT_FOUND,
+          `Room with ID ${command.roomId} not found`,
+          { roomId: command.roomId },
+        );
       }
       roomNumber = room.number;
     }
@@ -54,8 +66,10 @@ export class UpdateSessionHandler
     );
 
     if (hasConflict) {
-      throw new ConflictException(
+      throw new ApplicationException(
+        ApplicationErrorCode.SESSION_CONFLICT,
         'This room is already booked for this time slot on this date',
+        { roomId: newRoomId, date: newDate, timeSlot: newTimeSlot },
       );
     }
 
@@ -101,8 +115,10 @@ export class UpdateSessionHandler
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException(
+        throw new ApplicationException(
+          ApplicationErrorCode.SESSION_CONFLICT,
           'This room is already booked for this time slot on this date',
+          { roomId: newRoomId, date: newDate, timeSlot: newTimeSlot },
         );
       }
       throw error;
