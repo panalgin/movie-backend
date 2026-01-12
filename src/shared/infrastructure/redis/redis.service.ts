@@ -18,12 +18,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     const redisUrl = this.configService.get<string>('REDIS_URL');
 
     if (redisUrl) {
-      this.client = new Redis(redisUrl);
+      this.client = new Redis(redisUrl, {
+        tls: { rejectUnauthorized: false },
+      });
     } else {
       this.client = new Redis({
         host: this.configService.get('REDIS_HOST') || 'localhost',
         port: this.configService.get('REDIS_PORT') || 6379,
         lazyConnect: true,
+        tls: { rejectUnauthorized: false },
       });
       await this.client.connect();
     }
