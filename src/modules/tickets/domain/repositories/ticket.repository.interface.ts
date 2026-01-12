@@ -1,4 +1,4 @@
-import { Ticket } from '../entities';
+import type { Ticket } from '../entities';
 
 export const TICKET_REPOSITORY = Symbol('TICKET_REPOSITORY');
 
@@ -12,4 +12,5 @@ export interface ITicketRepository {
   ): Promise<Ticket | null>;
   save(ticket: Ticket): Promise<Ticket>;
   existsByUserAndSession(userId: string, sessionId: string): Promise<boolean>;
+  countBySessionId(sessionId: string): Promise<number>;
 }

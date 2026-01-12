@@ -18,6 +18,8 @@ import {
   NotificationChannel,
   NotificationType,
 } from '../../../notifications/domain/enums';
+import type { IRoomRepository } from '../../../sessions/domain/repositories';
+import { ROOM_REPOSITORY } from '../../../sessions/domain/repositories';
 import type { ISessionRepository } from '../../../sessions/domain/repositories';
 import { SESSION_REPOSITORY } from '../../../sessions/domain/repositories';
 import { Ticket } from '../../domain/entities';
@@ -34,6 +36,8 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
     private readonly ticketRepository: ITicketRepository,
     @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: ISessionRepository,
+    @Inject(ROOM_REPOSITORY)
+    private readonly roomRepository: IRoomRepository,
     @Inject(MOVIE_REPOSITORY)
     private readonly movieRepository: IMovieRepository,
     @Inject(USER_REPOSITORY)
@@ -75,6 +79,20 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
       );
     }
 
+    // Get room for capacity check
+    const room = await this.roomRepository.findById(session.roomId);
+    if (!room) {
+      throw new NotFoundException('Room not found for this session');
+    }
+
+    // Check room capacity
+    const ticketCount = await this.ticketRepository.countBySessionId(
+      command.sessionId,
+    );
+    if (!room.hasCapacityFor(ticketCount)) {
+      throw new ConflictException('Session is sold out');
+    }
+
     // Check if user already has a ticket for this session
     const existingTicket = await this.ticketRepository.existsByUserAndSession(
       command.userId,
@@ -102,6 +120,8 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
           movieTitle: movie.title,
           sessionDate: session.date,
           timeSlot: session.timeSlot,
+          roomId: session.roomId,
+          roomNumber: room.number,
         },
       },
       {
@@ -115,7 +135,7 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
       movieTitle: movie.title,
       sessionDate: session.date.toISOString().split('T')[0],
       timeSlot: session.timeSlot,
-      roomNumber: session.roomNumber,
+      roomNumber: room.number,
       ticketId: saved.id,
     }).catch((error) => {
       this.logger.error('Failed to send ticket notification', error);

@@ -4,8 +4,11 @@ import { USER_REPOSITORY } from '../auth/domain/repositories';
 import { PrismaUserRepository } from '../auth/infrastructure/persistence';
 import { MOVIE_REPOSITORY } from '../movies/domain/repositories';
 import { PrismaMovieRepository } from '../movies/infrastructure/persistence';
-import { SESSION_REPOSITORY } from '../sessions/domain/repositories';
-import { PrismaSessionRepository } from '../sessions/infrastructure/persistence';
+import { ROOM_REPOSITORY, SESSION_REPOSITORY } from '../sessions/domain/repositories';
+import {
+  PrismaRoomRepository,
+  PrismaSessionRepository,
+} from '../sessions/infrastructure/persistence';
 import { CommandHandlers, QueryHandlers } from './application/handlers';
 import { TICKET_REPOSITORY } from './domain/repositories';
 import { PrismaTicketRepository } from './infrastructure/persistence';
@@ -24,6 +27,10 @@ import { TicketsController } from './presentation';
     {
       provide: SESSION_REPOSITORY,
       useClass: PrismaSessionRepository,
+    },
+    {
+      provide: ROOM_REPOSITORY,
+      useClass: PrismaRoomRepository,
     },
     {
       provide: MOVIE_REPOSITORY,

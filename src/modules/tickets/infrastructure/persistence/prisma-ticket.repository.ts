@@ -103,4 +103,10 @@ export class PrismaTicketRepository implements ITicketRepository {
     });
     return count > 0;
   }
+
+  async countBySessionId(sessionId: string): Promise<number> {
+    return this.prisma.ticket.count({
+      where: { sessionId },
+    });
+  }
 }
