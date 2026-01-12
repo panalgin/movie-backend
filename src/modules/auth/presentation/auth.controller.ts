@@ -13,8 +13,10 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
   AuthResponseDto,
   AuthService,
@@ -34,6 +36,8 @@ export class AuthController {
 
   @Post('register/v1')
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60000, limit: 3 } }) // 3 registrations per minute
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({
     status: 201,
@@ -41,12 +45,15 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiConflictResponse({ description: 'Email or username already registered' })
+  @ApiTooManyRequestsResponse({ description: 'Too many registration attempts' })
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(dto);
   }
 
   @Post('login/v1')
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60000, limit: 5 } }) // 5 attempts per minute
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({
@@ -55,12 +62,15 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
+  @ApiTooManyRequestsResponse({ description: 'Too many login attempts' })
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(dto);
   }
 
   @Post('refresh/v1')
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60000, limit: 10 } }) // 10 refreshes per minute
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({
@@ -69,6 +79,7 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Invalid or expired refresh token' })
+  @ApiTooManyRequestsResponse({ description: 'Too many refresh attempts' })
   async refresh(@Body() dto: RefreshTokenDto): Promise<AuthResponseDto> {
     return this.authService.refreshTokens(dto.refreshToken);
   }
