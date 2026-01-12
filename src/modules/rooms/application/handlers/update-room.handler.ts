@@ -54,7 +54,7 @@ export class UpdateRoomHandler implements ICommandHandler<UpdateRoomCommand> {
     const updatedRoom = await this.roomRepository.update(
       Object.assign(room, {
         props: {
-          ...room['props'],
+          ...room.props,
           capacity: command.capacity,
           updatedAt: new Date(),
         },
