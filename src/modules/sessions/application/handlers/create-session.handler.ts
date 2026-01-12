@@ -1,6 +1,8 @@
 import { ConflictException, Inject, NotFoundException } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { Prisma } from '@prisma/client';
+import { AuditService } from '../../../audit/application';
+import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { IMovieRepository } from '../../../movies/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
 import { Session } from '../../domain/entities';
@@ -17,6 +19,7 @@ export class CreateSessionHandler
     private readonly sessionRepository: ISessionRepository,
     @Inject(MOVIE_REPOSITORY)
     private readonly movieRepository: IMovieRepository,
+    private readonly auditService: AuditService,
   ) {}
 
   async execute(command: CreateSessionCommand): Promise<Session> {
@@ -47,7 +50,30 @@ export class CreateSessionHandler
     });
 
     try {
-      return await this.sessionRepository.save(session);
+      const saved = await this.sessionRepository.save(session);
+
+      await this.auditService.logSuccess(
+        {
+          action: AuditAction.SESSION_CREATE,
+          entityType: AuditEntityType.SESSION,
+          entityId: saved.id,
+          changes: {
+            after: {
+              movieId: saved.movieId,
+              date: saved.date,
+              timeSlot: saved.timeSlot,
+              roomNumber: saved.roomNumber,
+            },
+          },
+          metadata: { movieTitle: movie.title },
+        },
+        {
+          actorId: command.actorId,
+          actorRole: command.actorRole,
+        },
+      );
+
+      return saved;
     } catch (error) {
       // Handle unique constraint violation (double-booking at DB level)
       if (

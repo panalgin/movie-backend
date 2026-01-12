@@ -1,5 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { AuditService } from '../../../audit/application';
+import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import { Movie } from '../../domain/entities';
 import type { IMovieRepository } from '../../domain/repositories';
 import { MOVIE_REPOSITORY } from '../../domain/repositories';
@@ -12,6 +14,7 @@ export class BulkCreateMoviesHandler
   constructor(
     @Inject(MOVIE_REPOSITORY)
     private readonly movieRepository: IMovieRepository,
+    private readonly auditService: AuditService,
   ) {}
 
   async execute(command: BulkCreateMoviesCommand): Promise<Movie[]> {
@@ -23,6 +26,23 @@ export class BulkCreateMoviesHandler
       }),
     );
 
-    return this.movieRepository.saveMany(movies);
+    const saved = await this.movieRepository.saveMany(movies);
+
+    await this.auditService.logSuccess(
+      {
+        action: AuditAction.MOVIE_BULK_CREATE,
+        entityType: AuditEntityType.MOVIE,
+        metadata: {
+          count: saved.length,
+          movieIds: saved.map((m) => m.id),
+        },
+      },
+      {
+        actorId: command.actorId,
+        actorRole: command.actorRole,
+      },
+    );
+
+    return saved;
   }
 }

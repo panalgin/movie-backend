@@ -6,5 +6,7 @@ export class CreateSessionCommand {
     public readonly date: Date,
     public readonly timeSlot: TimeSlotEnum,
     public readonly roomNumber: number,
+    public readonly actorId?: string,
+    public readonly actorRole?: string,
   ) {}
 }

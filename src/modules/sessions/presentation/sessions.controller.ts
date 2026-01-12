@@ -18,8 +18,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import type { User } from '../../auth/domain/entities';
 import { UserRole } from '../../auth/domain/entities';
-import { Public, Roles } from '../../auth/presentation/decorators';
+import { CurrentUser, Public, Roles } from '../../auth/presentation/decorators';
 import { JwtAuthGuard, RolesGuard } from '../../auth/presentation/guards';
 import {
   CreateSessionCommand,
@@ -47,13 +48,15 @@ export class SessionsController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
-  async create(@Body() dto: CreateSessionDto) {
+  async create(@Body() dto: CreateSessionDto, @CurrentUser() user: User) {
     return this.commandBus.execute(
       new CreateSessionCommand(
         dto.movieId,
         new Date(dto.date),
         dto.timeSlot,
         dto.roomNumber,
+        user.id,
+        user.role,
       ),
     );
   }
@@ -100,7 +103,9 @@ export class SessionsController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
-  async remove(@Param('id') id: string) {
-    return this.commandBus.execute(new DeleteSessionCommand(id));
+  async remove(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.commandBus.execute(
+      new DeleteSessionCommand(id, user.id, user.role),
+    );
   }
 }

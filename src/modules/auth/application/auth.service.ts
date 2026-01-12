@@ -9,10 +9,17 @@ import { JwtService } from '@nestjs/jwt';
 import { ProviderType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../../shared/infrastructure/prisma';
+import { AuditService } from '../../audit/application';
+import { AuditAction, AuditEntityType } from '../../audit/domain/enums';
 import { User, UserRole } from '../domain/entities';
 import type { IUserRepository } from '../domain/repositories';
 import { USER_REPOSITORY } from '../domain/repositories';
 import type { AuthResponseDto, LoginDto, RegisterDto } from './dto';
+
+export interface AuthContext {
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -21,9 +28,13 @@ export class AuthService {
     private readonly userRepository: IUserRepository,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly auditService: AuditService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<AuthResponseDto> {
+  async register(
+    dto: RegisterDto,
+    context: AuthContext = {},
+  ): Promise<AuthResponseDto> {
     // Check if email exists
     if (await this.userRepository.existsByEmail(dto.email)) {
       throw new ConflictException('Email already registered');
@@ -62,6 +73,22 @@ export class AuthService {
       },
     });
 
+    // Audit log
+    await this.auditService.logSuccess(
+      {
+        action: AuditAction.USER_REGISTER,
+        entityType: AuditEntityType.USER,
+        entityId: savedUser.id,
+        metadata: { email: savedUser.email, username: savedUser.username },
+      },
+      {
+        actorId: savedUser.id,
+        actorRole: savedUser.role,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      },
+    );
+
     return this.generateAuthResponse(
       User.reconstitute(savedUser.id, {
         username: savedUser.username,
@@ -74,7 +101,10 @@ export class AuthService {
     );
   }
 
-  async login(dto: LoginDto): Promise<AuthResponseDto> {
+  async login(
+    dto: LoginDto,
+    context: AuthContext = {},
+  ): Promise<AuthResponseDto> {
     const prismaUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: {
@@ -85,11 +115,33 @@ export class AuthService {
     });
 
     if (!prismaUser || prismaUser.authProviders.length === 0) {
+      // Audit failed login
+      await this.auditService.logFailure(
+        {
+          action: AuditAction.USER_LOGIN_FAILED,
+          entityType: AuditEntityType.USER,
+          metadata: { email: dto.email, reason: 'User not found' },
+        },
+        { ipAddress: context.ipAddress, userAgent: context.userAgent },
+      );
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const authProvider = prismaUser.authProviders[0];
     if (!authProvider.passwordHash) {
+      await this.auditService.logFailure(
+        {
+          action: AuditAction.USER_LOGIN_FAILED,
+          entityType: AuditEntityType.USER,
+          entityId: prismaUser.id,
+          metadata: { reason: 'No password hash' },
+        },
+        {
+          actorId: prismaUser.id,
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+        },
+      );
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -99,6 +151,19 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
+      await this.auditService.logFailure(
+        {
+          action: AuditAction.USER_LOGIN_FAILED,
+          entityType: AuditEntityType.USER,
+          entityId: prismaUser.id,
+          metadata: { reason: 'Invalid password' },
+        },
+        {
+          actorId: prismaUser.id,
+          ipAddress: context.ipAddress,
+          userAgent: context.userAgent,
+        },
+      );
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -110,6 +175,21 @@ export class AuthService {
       createdAt: prismaUser.createdAt,
       updatedAt: prismaUser.updatedAt,
     });
+
+    // Audit successful login
+    await this.auditService.logSuccess(
+      {
+        action: AuditAction.USER_LOGIN,
+        entityType: AuditEntityType.USER,
+        entityId: user.id,
+      },
+      {
+        actorId: user.id,
+        actorRole: user.role,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      },
+    );
 
     return this.generateAuthResponse(user);
   }
@@ -144,13 +224,33 @@ export class AuthService {
     return this.generateAuthResponse(user);
   }
 
-  async logout(userId: string, refreshToken: string): Promise<void> {
+  async logout(
+    userId: string,
+    refreshToken: string,
+    context: AuthContext = {},
+  ): Promise<void> {
     await this.prisma.refreshToken.deleteMany({
       where: {
         userId,
         token: refreshToken,
       },
     });
+
+    // Audit logout
+    const user = await this.userRepository.findById(userId);
+    await this.auditService.logSuccess(
+      {
+        action: AuditAction.USER_LOGOUT,
+        entityType: AuditEntityType.USER,
+        entityId: userId,
+      },
+      {
+        actorId: userId,
+        actorRole: user?.role,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      },
+    );
   }
 
   async getUserById(userId: string): Promise<User | null> {

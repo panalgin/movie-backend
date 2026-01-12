@@ -19,8 +19,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import type { User } from '../../auth/domain/entities';
 import { UserRole } from '../../auth/domain/entities';
-import { Public, Roles } from '../../auth/presentation/decorators';
+import { CurrentUser, Public, Roles } from '../../auth/presentation/decorators';
 import { JwtAuthGuard, RolesGuard } from '../../auth/presentation/guards';
 import {
   BulkCreateMoviesCommand,
@@ -57,9 +58,15 @@ export class MoviesController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
-  async create(@Body() dto: CreateMovieDto) {
+  async create(@Body() dto: CreateMovieDto, @CurrentUser() user: User) {
     return this.commandBus.execute(
-      new CreateMovieCommand(dto.title, dto.description, dto.ageRestriction),
+      new CreateMovieCommand(
+        dto.title,
+        dto.description,
+        dto.ageRestriction,
+        user.id,
+        user.role,
+      ),
     );
   }
 
@@ -73,8 +80,13 @@ export class MoviesController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
-  async bulkCreate(@Body() dto: BulkCreateMoviesDto) {
-    return this.commandBus.execute(new BulkCreateMoviesCommand(dto.movies));
+  async bulkCreate(
+    @Body() dto: BulkCreateMoviesDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.commandBus.execute(
+      new BulkCreateMoviesCommand(dto.movies, user.id, user.role),
+    );
   }
 
   @Get()
@@ -119,13 +131,19 @@ export class MoviesController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
-  async update(@Param('id') id: string, @Body() dto: UpdateMovieDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateMovieDto,
+    @CurrentUser() user: User,
+  ) {
     return this.commandBus.execute(
       new UpdateMovieCommand(
         id,
         dto.title,
         dto.description,
         dto.ageRestriction,
+        user.id,
+        user.role,
       ),
     );
   }
@@ -141,8 +159,10 @@ export class MoviesController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
-  async remove(@Param('id') id: string) {
-    return this.commandBus.execute(new DeleteMovieCommand(id));
+  async remove(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.commandBus.execute(
+      new DeleteMovieCommand(id, user.id, user.role),
+    );
   }
 
   @Delete('bulk')
@@ -155,7 +175,12 @@ export class MoviesController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
-  async bulkDelete(@Body() dto: BulkDeleteMoviesDto) {
-    return this.commandBus.execute(new BulkDeleteMoviesCommand(dto.ids));
+  async bulkDelete(
+    @Body() dto: BulkDeleteMoviesDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.commandBus.execute(
+      new BulkDeleteMoviesCommand(dto.ids, user.id, user.role),
+    );
   }
 }

@@ -4,7 +4,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Ip,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -17,6 +19,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import type { Request } from 'express';
 import {
   AuthResponseDto,
   AuthService,
@@ -46,8 +49,15 @@ export class AuthController {
   })
   @ApiConflictResponse({ description: 'Email or username already registered' })
   @ApiTooManyRequestsResponse({ description: 'Too many registration attempts' })
-  async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Ip() ip: string,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    return this.authService.register(dto, {
+      ipAddress: ip,
+      userAgent: req.headers['user-agent'],
+    });
   }
 
   @Post('login/v1')
@@ -63,8 +73,15 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiTooManyRequestsResponse({ description: 'Too many login attempts' })
-  async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Ip() ip: string,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    return this.authService.login(dto, {
+      ipAddress: ip,
+      userAgent: req.headers['user-agent'],
+    });
   }
 
   @Post('refresh/v1')
@@ -113,8 +130,13 @@ export class AuthController {
   async logout(
     @CurrentUser() user: User,
     @Body() dto: RefreshTokenDto,
+    @Ip() ip: string,
+    @Req() req: Request,
   ): Promise<{ message: string }> {
-    await this.authService.logout(user.id, dto.refreshToken);
+    await this.authService.logout(user.id, dto.refreshToken, {
+      ipAddress: ip,
+      userAgent: req.headers['user-agent'],
+    });
     return { message: 'Logged out successfully' };
   }
 }
