@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import type { Ticket } from '../entities';
 
 export const TICKET_REPOSITORY = Symbol('TICKET_REPOSITORY');
@@ -8,6 +9,5 @@ export interface ITicketRepository {
   findBySessionId(sessionId: string): Promise<Ticket[]>;
   findByUserAndSession(userId: string, sessionId: string): Promise<Ticket[]>;
   save(ticket: Ticket): Promise<Ticket>;
-  saveMany(tickets: Ticket[]): Promise<Ticket[]>;
-  countBySessionId(sessionId: string): Promise<number>;
+  saveMany(tickets: Ticket[], tx?: Prisma.TransactionClient): Promise<Ticket[]>;
 }

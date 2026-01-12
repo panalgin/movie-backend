@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/infrastructure/prisma';
 import { Ticket } from '../../domain/entities';
 import type { ITicketRepository } from '../../domain/repositories';
@@ -88,7 +89,11 @@ export class PrismaTicketRepository implements ITicketRepository {
     });
   }
 
-  async saveMany(tickets: Ticket[]): Promise<Ticket[]> {
+  async saveMany(
+    tickets: Ticket[],
+    tx?: Prisma.TransactionClient,
+  ): Promise<Ticket[]> {
+    const client = tx ?? this.prisma;
     const data = tickets.map((ticket) => ({
       id: ticket.id,
       userId: ticket.userId,
@@ -96,15 +101,9 @@ export class PrismaTicketRepository implements ITicketRepository {
       purchasedAt: ticket.purchasedAt,
     }));
 
-    await this.prisma.ticket.createMany({ data });
+    await client.ticket.createMany({ data });
 
     // Return the tickets as-is since createMany doesn't return created records
     return tickets;
-  }
-
-  async countBySessionId(sessionId: string): Promise<number> {
-    return this.prisma.ticket.count({
-      where: { sessionId },
-    });
   }
 }

@@ -4,6 +4,7 @@ import {
   ApplicationErrorCode,
   ApplicationException,
 } from '../../../../shared/application';
+import { PrismaUnitOfWork } from '../../../../shared/infrastructure/prisma';
 import { AuditService } from '../../../audit/application';
 import { AuditAction, AuditEntityType } from '../../../audit/domain/enums';
 import type { IUserRepository } from '../../../auth/domain/repositories';
@@ -39,6 +40,7 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
     private readonly movieRepository: IMovieRepository,
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
+    private readonly uow: PrismaUnitOfWork,
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
   ) {}
@@ -94,27 +96,13 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
       );
     }
 
-    // Get room for capacity check
+    // Get room for metadata (room number, etc.)
     const room = await this.roomRepository.findById(session.roomId);
     if (!room) {
       throw new ApplicationException(
         ApplicationErrorCode.ROOM_NOT_FOUND,
         'Room not found for this session',
         { roomId: session.roomId },
-      );
-    }
-
-    // Check room capacity
-    const currentTicketCount = await this.ticketRepository.countBySessionId(
-      command.sessionId,
-    );
-    const availableSeats = room.remainingCapacity(currentTicketCount);
-
-    if (availableSeats < quantity) {
-      throw new ApplicationException(
-        ApplicationErrorCode.SESSION_SOLD_OUT,
-        `Not enough seats available. Available: ${availableSeats}, Requested: ${quantity}`,
-        { available: availableSeats, requested: quantity },
       );
     }
 
@@ -129,7 +117,23 @@ export class BuyTicketHandler implements ICommandHandler<BuyTicketCommand> {
       );
     }
 
-    const savedTickets = await this.ticketRepository.saveMany(tickets);
+    const savedTickets = await this.uow.transaction(async (tx) => {
+      const reserved = await this.sessionRepository.reserveSeatsIfAvailable(
+        command.sessionId,
+        quantity,
+        tx,
+      );
+
+      if (!reserved) {
+        throw new ApplicationException(
+          ApplicationErrorCode.SESSION_SOLD_OUT,
+          `Not enough seats available. Requested: ${quantity}`,
+          { requested: quantity },
+        );
+      }
+
+      return this.ticketRepository.saveMany(tickets, tx);
+    });
 
     // Log audit for each ticket
     for (const ticket of savedTickets) {

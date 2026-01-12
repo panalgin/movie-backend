@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import type { TimeSlotEnum } from '../../../movies/domain/value-objects';
 import type { Session } from '../entities';
 
@@ -18,6 +19,15 @@ export interface ISessionRepository {
   save(session: Session): Promise<Session>;
   update(session: Session): Promise<Session>;
   delete(id: string): Promise<void>;
+  /**
+   * Atomically increments soldSeats if capacity allows.
+   * Returns true if seats were reserved, false if sold out.
+   */
+  reserveSeatsIfAvailable(
+    sessionId: string,
+    quantity: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<boolean>;
   existsConflict(
     date: Date,
     timeSlot: TimeSlotEnum,

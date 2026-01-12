@@ -3,6 +3,7 @@ import {
   ApplicationErrorCode,
   ApplicationException,
 } from '../../../../shared/application';
+import { PrismaUnitOfWork } from '../../../../shared/infrastructure/prisma';
 import { AuditService } from '../../../audit/application';
 import { USER_REPOSITORY } from '../../../auth/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
@@ -21,6 +22,7 @@ describe('BuyTicketHandler', () => {
   let roomRepository: Record<string, jest.Mock>;
   let movieRepository: Record<string, jest.Mock>;
   let userRepository: Record<string, jest.Mock>;
+  let prisma: Record<string, jest.Mock>;
 
   const mockSession = {
     id: 'session-id',
@@ -35,7 +37,6 @@ describe('BuyTicketHandler', () => {
     id: 'room-id',
     number: 1,
     capacity: 50,
-    remainingCapacity: jest.fn().mockReturnValue(40),
   };
 
   const mockMovie = {
@@ -57,11 +58,11 @@ describe('BuyTicketHandler', () => {
       saveMany: jest
         .fn()
         .mockImplementation((tickets) => Promise.resolve(tickets)),
-      countBySessionId: jest.fn().mockResolvedValue(10),
     };
 
     sessionRepository = {
       findById: jest.fn().mockResolvedValue(mockSession),
+      reserveSeatsIfAvailable: jest.fn().mockResolvedValue(true),
     };
 
     roomRepository = {
@@ -79,7 +80,10 @@ describe('BuyTicketHandler', () => {
     // Reset mocks
     mockSession.isPast.mockReturnValue(false);
     mockMovie.canBeWatchedBy.mockReturnValue(true);
-    mockRoom.remainingCapacity.mockReturnValue(40);
+
+    prisma = {
+      transaction: jest.fn().mockImplementation(async (fn) => fn({})),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -97,6 +101,7 @@ describe('BuyTicketHandler', () => {
           provide: NotificationService,
           useValue: { send: jest.fn() },
         },
+        { provide: PrismaUnitOfWork, useValue: prisma },
       ],
     }).compile();
 
@@ -115,8 +120,14 @@ describe('BuyTicketHandler', () => {
     expect(result).toHaveLength(1);
     expect(result[0].userId).toBe('user-id');
     expect(result[0].sessionId).toBe('session-id');
+    expect(sessionRepository.reserveSeatsIfAvailable).toHaveBeenCalledWith(
+      'session-id',
+      1,
+      expect.any(Object),
+    );
     expect(ticketRepository.saveMany).toHaveBeenCalledWith(
       expect.arrayContaining([expect.any(Ticket)]),
+      expect.any(Object),
     );
   });
 
@@ -130,12 +141,18 @@ describe('BuyTicketHandler', () => {
     const result = await handler.execute(command);
 
     expect(result).toHaveLength(3);
+    expect(sessionRepository.reserveSeatsIfAvailable).toHaveBeenCalledWith(
+      'session-id',
+      3,
+      expect.any(Object),
+    );
     expect(ticketRepository.saveMany).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.any(Ticket),
         expect.any(Ticket),
         expect.any(Ticket),
       ]),
+      expect.any(Object),
     );
   });
 
@@ -264,7 +281,7 @@ describe('BuyTicketHandler', () => {
   });
 
   it('should throw ApplicationException when not enough seats for quantity', async () => {
-    mockRoom.remainingCapacity.mockReturnValue(2);
+    sessionRepository.reserveSeatsIfAvailable.mockResolvedValue(false);
 
     const command = new BuyTicketCommand(
       'user-id',
@@ -284,7 +301,7 @@ describe('BuyTicketHandler', () => {
   });
 
   it('should throw ApplicationException when session is sold out', async () => {
-    mockRoom.remainingCapacity.mockReturnValue(0);
+    sessionRepository.reserveSeatsIfAvailable.mockResolvedValue(false);
 
     const command = new BuyTicketCommand(
       'user-id',

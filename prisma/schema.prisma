@@ -105,6 +105,7 @@ model Session {
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   timeSlot  TimeSlot
+  soldSeats Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tickets   Ticket[]

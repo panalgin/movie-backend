@@ -12,6 +12,25 @@ import type {
 export class PrismaSessionRepository implements ISessionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async reserveSeatsIfAvailable(
+    sessionId: string,
+    quantity: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<boolean> {
+    const client = tx ?? this.prisma;
+
+    const updatedRows = await client.$executeRaw`
+      UPDATE "sessions" AS s
+      SET "soldSeats" = s."soldSeats" + ${quantity}
+      FROM "rooms" AS r
+      WHERE s."id" = ${sessionId}
+        AND r."id" = s."roomId"
+        AND s."soldSeats" + ${quantity} <= r."capacity"
+    `;
+
+    return updatedRows === 1;
+  }
+
   async findById(id: string): Promise<Session | null> {
     const session = await this.prisma.session.findUnique({
       where: { id },

@@ -640,6 +640,68 @@ describe('Movie Management System (e2e)', () => {
         })
         .expect(409);
     });
+
+    it('should not oversell under concurrent ticket purchases', async () => {
+      // Create a room with capacity of 2
+      const smallRoom = await prisma.room.create({
+        data: {
+          number: 199,
+          capacity: 2,
+        },
+      });
+
+      // Create a movie
+      const capacityMovie = await prisma.movie.create({
+        data: {
+          title: 'Concurrent Capacity Test Movie',
+          ageRestriction: 0,
+        },
+      });
+
+      // Create a session in the small room
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 11);
+
+      const sessionResponse = await request(app.getHttpServer())
+        .post('/sessions/v1')
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({
+          movieId: capacityMovie.id,
+          roomId: smallRoom.id,
+          date: futureDate.toISOString().split('T')[0],
+          timeSlot: TimeSlotEnum.SLOT_12_14,
+        })
+        .expect(201);
+
+      const concurrentSessionId = sessionResponse.body.id;
+
+      // Fire many concurrent purchases (same user/token is fine; app allows repeat buys)
+      const responses = await Promise.all(
+        Array.from({ length: 10 }).map(() =>
+          request(app.getHttpServer())
+            .post('/tickets/v1')
+            .set('Authorization', `Bearer ${customerToken}`)
+            .send({ sessionId: concurrentSessionId, quantity: 1 }),
+        ),
+      );
+
+      const success = responses.filter((r) => r.status === 201);
+      const soldOut = responses.filter((r) => r.status === 409);
+
+      expect(success).toHaveLength(2);
+      expect(soldOut.length).toBeGreaterThanOrEqual(8);
+
+      // DB should reflect no oversell
+      const ticketCount = await prisma.ticket.count({
+        where: { sessionId: concurrentSessionId },
+      });
+      expect(ticketCount).toBe(2);
+
+      const session = await prisma.session.findUnique({
+        where: { id: concurrentSessionId },
+      });
+      expect(session?.soldSeats).toBe(2);
+    });
   });
 
   describe('Age Restriction', () => {
