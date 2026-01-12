@@ -86,18 +86,30 @@ model Movie {
   @@map("movies")
 }
 
-model Session {
-  id         String   @id @default(uuid())
-  movieId    String
-  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  date       DateTime @db.Date
-  timeSlot   TimeSlot
-  roomNumber Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  tickets    Ticket[]
+model Room {
+  id        String    @id @default(uuid())
+  number    Int       @unique
+  capacity  Int       @default(50)
+  sessions  Session[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  @@unique([date, timeSlot, roomNumber])
+  @@map("rooms")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  timeSlot  TimeSlot
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets   Ticket[]
+
+  @@unique([date, timeSlot, roomId])
   @@map("sessions")
 }
 
