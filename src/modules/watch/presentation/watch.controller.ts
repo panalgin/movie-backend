@@ -24,7 +24,7 @@ interface AuthenticatedUser {
 }
 
 @ApiTags('Watch')
-@Controller('watch/v1')
+@Controller('watch')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class WatchController {
   constructor(
@@ -32,7 +32,7 @@ export class WatchController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Post()
+  @Post('v1')
   @Roles(UserRole.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Watch a movie (Customer only)' })
@@ -51,7 +51,7 @@ export class WatchController {
     );
   }
 
-  @Get('history')
+  @Get('history/v1')
   @Roles(UserRole.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get watch history (Customer only)' })

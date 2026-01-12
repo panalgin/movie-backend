@@ -38,7 +38,7 @@ import {
 import { GetSessionByIdQuery, GetSessionsQuery } from '../application/queries';
 
 @ApiTags('Sessions')
-@Controller('sessions/v1')
+@Controller('sessions')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SessionsController {
   constructor(
@@ -46,7 +46,7 @@ export class SessionsController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Post()
+  @Post('v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new session (Manager only)' })
@@ -69,7 +69,7 @@ export class SessionsController {
     );
   }
 
-  @Get()
+  @Get('v1')
   @Public()
   @ApiOperation({ summary: 'Get all sessions (Public)' })
   @ApiResponse({
@@ -88,7 +88,7 @@ export class SessionsController {
     );
   }
 
-  @Get(':id')
+  @Get(':id/v1')
   @Public()
   @ApiOperation({ summary: 'Get a session by ID (Public)' })
   @ApiParam({ name: 'id', description: 'Session ID' })
@@ -100,7 +100,7 @@ export class SessionsController {
     return this.queryBus.execute(new GetSessionByIdQuery(id));
   }
 
-  @Put(':id')
+  @Put(':id/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a session (Manager only)' })
@@ -132,7 +132,7 @@ export class SessionsController {
     );
   }
 
-  @Delete(':id')
+  @Delete(':id/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a session (Manager only)' })

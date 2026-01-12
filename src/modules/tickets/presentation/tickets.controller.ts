@@ -25,7 +25,7 @@ interface AuthenticatedUser {
 }
 
 @ApiTags('Tickets')
-@Controller('tickets/v1')
+@Controller('tickets')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class TicketsController {
   constructor(
@@ -33,7 +33,7 @@ export class TicketsController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Post()
+  @Post('v1')
   @Roles(UserRole.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Buy tickets (Customer only)' })
@@ -59,7 +59,7 @@ export class TicketsController {
     );
   }
 
-  @Get('my')
+  @Get('my/v1')
   @Roles(UserRole.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my tickets (Customer only)' })
@@ -72,7 +72,7 @@ export class TicketsController {
     return this.queryBus.execute(new GetMyTicketsQuery(user.id));
   }
 
-  @Get(':id')
+  @Get(':id/v1')
   @Roles(UserRole.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a ticket by ID (Customer only)' })

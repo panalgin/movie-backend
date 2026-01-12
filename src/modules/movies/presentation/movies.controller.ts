@@ -40,7 +40,7 @@ import {
 import { GetMovieByIdQuery, GetMoviesQuery } from '../application/queries';
 
 @ApiTags('Movies')
-@Controller('movies/v1')
+@Controller('movies')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class MoviesController {
   constructor(
@@ -48,7 +48,7 @@ export class MoviesController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Post()
+  @Post('v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new movie (Manager only)' })
@@ -70,7 +70,7 @@ export class MoviesController {
     );
   }
 
-  @Post('bulk')
+  @Post('bulk/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create multiple movies (Manager only)' })
@@ -89,7 +89,7 @@ export class MoviesController {
     );
   }
 
-  @Get()
+  @Get('v1')
   @Public()
   @ApiOperation({ summary: 'Get all movies (Public, cached 30s with lock)' })
   @ApiResponse({
@@ -108,7 +108,7 @@ export class MoviesController {
     );
   }
 
-  @Get(':id')
+  @Get(':id/v1')
   @Public()
   @ApiOperation({ summary: 'Get a movie by ID (Public)' })
   @ApiParam({ name: 'id', description: 'Movie ID' })
@@ -120,7 +120,7 @@ export class MoviesController {
     return this.queryBus.execute(new GetMovieByIdQuery(id));
   }
 
-  @Put(':id')
+  @Put(':id/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a movie (Manager only)' })
@@ -148,7 +148,7 @@ export class MoviesController {
     );
   }
 
-  @Delete(':id')
+  @Delete(':id/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a movie (Manager only)' })
@@ -165,7 +165,7 @@ export class MoviesController {
     );
   }
 
-  @Delete('bulk')
+  @Delete('bulk/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete multiple movies (Manager only)' })

@@ -212,10 +212,10 @@ describe('Movie Management System (e2e)', () => {
       });
     });
 
-    describe('GET /movies/v1/:id', () => {
+    describe('GET /movies/:id/v1', () => {
       it('should get movie by id', async () => {
         const response = await request(app.getHttpServer())
-          .get(`/movies/v1/${movieId}`)
+          .get(`/movies/${movieId}/v1`)
           .expect(200);
 
         expect(response.body.id).toBe(movieId);
@@ -223,7 +223,7 @@ describe('Movie Management System (e2e)', () => {
 
       it('should return 404 for non-existent movie', async () => {
         await request(app.getHttpServer())
-          .get('/movies/v1/non-existent-id')
+          .get('/movies/non-existent-id/v1')
           .expect(404);
       });
     });
@@ -291,10 +291,10 @@ describe('Movie Management System (e2e)', () => {
       });
     });
 
-    describe('PUT /sessions/v1/:id', () => {
+    describe('PUT /sessions/:id/v1', () => {
       it('should allow manager to update session', async () => {
         const response = await request(app.getHttpServer())
-          .put(`/sessions/v1/${sessionId}`)
+          .put(`/sessions/${sessionId}/v1`)
           .set('Authorization', `Bearer ${managerToken}`)
           .send({
             timeSlot: TimeSlotEnum.SLOT_16_18,
@@ -307,7 +307,7 @@ describe('Movie Management System (e2e)', () => {
 
       it('should reject customer from updating session', async () => {
         await request(app.getHttpServer())
-          .put(`/sessions/v1/${sessionId}`)
+          .put(`/sessions/${sessionId}/v1`)
           .set('Authorization', `Bearer ${customerToken}`)
           .send({
             timeSlot: TimeSlotEnum.SLOT_18_20,
@@ -317,7 +317,7 @@ describe('Movie Management System (e2e)', () => {
 
       it('should return 404 for non-existent session', async () => {
         await request(app.getHttpServer())
-          .put('/sessions/v1/00000000-0000-0000-0000-000000000000')
+          .put('/sessions/00000000-0000-0000-0000-000000000000/v1')
           .set('Authorization', `Bearer ${managerToken}`)
           .send({
             timeSlot: TimeSlotEnum.SLOT_18_20,
@@ -373,10 +373,10 @@ describe('Movie Management System (e2e)', () => {
       });
     });
 
-    describe('GET /tickets/v1/my', () => {
+    describe('GET /tickets/my/v1', () => {
       it('should return user tickets', async () => {
         const response = await request(app.getHttpServer())
-          .get('/tickets/v1/my')
+          .get('/tickets/my/v1')
           .set('Authorization', `Bearer ${customerToken}`)
           .expect(200);
 
@@ -401,10 +401,10 @@ describe('Movie Management System (e2e)', () => {
       });
     });
 
-    describe('GET /watch/v1/history', () => {
+    describe('GET /watch/history/v1', () => {
       it('should return watch history', async () => {
         const response = await request(app.getHttpServer())
-          .get('/watch/v1/history')
+          .get('/watch/history/v1')
           .set('Authorization', `Bearer ${customerToken}`)
           .expect(200);
 
@@ -479,10 +479,10 @@ describe('Movie Management System (e2e)', () => {
       });
     });
 
-    describe('GET /rooms/v1/:id', () => {
+    describe('GET /rooms/:id/v1', () => {
       it('should get room by id', async () => {
         const response = await request(app.getHttpServer())
-          .get(`/rooms/v1/${testRoomId}`)
+          .get(`/rooms/${testRoomId}/v1`)
           .expect(200);
 
         expect(response.body.id).toBe(testRoomId);
@@ -491,15 +491,15 @@ describe('Movie Management System (e2e)', () => {
 
       it('should return 404 for non-existent room', async () => {
         await request(app.getHttpServer())
-          .get('/rooms/v1/00000000-0000-0000-0000-000000000000')
+          .get('/rooms/00000000-0000-0000-0000-000000000000/v1')
           .expect(404);
       });
     });
 
-    describe('PUT /rooms/v1/:id', () => {
+    describe('PUT /rooms/:id/v1', () => {
       it('should allow manager to update room capacity', async () => {
         const response = await request(app.getHttpServer())
-          .put(`/rooms/v1/${testRoomId}`)
+          .put(`/rooms/${testRoomId}/v1`)
           .set('Authorization', `Bearer ${managerToken}`)
           .send({
             capacity: 150,
@@ -512,7 +512,7 @@ describe('Movie Management System (e2e)', () => {
 
       it('should reject customer from updating room', async () => {
         await request(app.getHttpServer())
-          .put(`/rooms/v1/${testRoomId}`)
+          .put(`/rooms/${testRoomId}/v1`)
           .set('Authorization', `Bearer ${customerToken}`)
           .send({
             capacity: 200,
@@ -522,7 +522,7 @@ describe('Movie Management System (e2e)', () => {
 
       it('should return 404 for non-existent room', async () => {
         await request(app.getHttpServer())
-          .put('/rooms/v1/00000000-0000-0000-0000-000000000000')
+          .put('/rooms/00000000-0000-0000-0000-000000000000/v1')
           .set('Authorization', `Bearer ${managerToken}`)
           .send({
             capacity: 100,
@@ -531,10 +531,10 @@ describe('Movie Management System (e2e)', () => {
       });
     });
 
-    describe('DELETE /rooms/v1/:id', () => {
+    describe('DELETE /rooms/:id/v1', () => {
       it('should reject customer from deleting room', async () => {
         await request(app.getHttpServer())
-          .delete(`/rooms/v1/${testRoomId}`)
+          .delete(`/rooms/${testRoomId}/v1`)
           .set('Authorization', `Bearer ${customerToken}`)
           .expect(403);
       });
@@ -553,19 +553,19 @@ describe('Movie Management System (e2e)', () => {
         const deleteRoomId = createResponse.body.id;
 
         await request(app.getHttpServer())
-          .delete(`/rooms/v1/${deleteRoomId}`)
+          .delete(`/rooms/${deleteRoomId}/v1`)
           .set('Authorization', `Bearer ${managerToken}`)
           .expect(200);
 
         // Verify it's deleted
         await request(app.getHttpServer())
-          .get(`/rooms/v1/${deleteRoomId}`)
+          .get(`/rooms/${deleteRoomId}/v1`)
           .expect(404);
       });
 
       it('should return 404 for non-existent room', async () => {
         await request(app.getHttpServer())
-          .delete('/rooms/v1/00000000-0000-0000-0000-000000000000')
+          .delete('/rooms/00000000-0000-0000-0000-000000000000/v1')
           .set('Authorization', `Bearer ${managerToken}`)
           .expect(404);
       });

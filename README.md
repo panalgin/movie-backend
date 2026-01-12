@@ -202,47 +202,47 @@ This enables **granular evolution** - each resource can advance to v2 independen
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
 | `GET` | `/movies/v1` | Public | - | List movies (cached, with filtering/sorting) |
-| `GET` | `/movies/v1/:id` | Public | - | Get movie by ID (cached) |
+| `GET` | `/movies/:id/v1` | Public | - | Get movie by ID (cached) |
 | `POST` | `/movies/v1` | JWT | Manager | Create movie |
-| `PUT` | `/movies/v1/:id` | JWT | Manager | Update movie |
-| `DELETE` | `/movies/v1/:id` | JWT | Manager | Delete movie |
-| `POST` | `/movies/v1/bulk` | JWT | Manager | Bulk create movies |
-| `DELETE` | `/movies/v1/bulk` | JWT | Manager | Bulk delete movies |
+| `PUT` | `/movies/:id/v1` | JWT | Manager | Update movie |
+| `DELETE` | `/movies/:id/v1` | JWT | Manager | Delete movie |
+| `POST` | `/movies/bulk/v1` | JWT | Manager | Bulk create movies |
+| `DELETE` | `/movies/bulk/v1` | JWT | Manager | Bulk delete movies |
 
 ### Sessions
 
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
 | `GET` | `/sessions/v1` | Public | - | List sessions |
-| `GET` | `/sessions/v1/:id` | Public | - | Get session by ID |
+| `GET` | `/sessions/:id/v1` | Public | - | Get session by ID |
 | `POST` | `/sessions/v1` | JWT | Manager | Create session |
-| `PUT` | `/sessions/v1/:id` | JWT | Manager | Update session |
-| `DELETE` | `/sessions/v1/:id` | JWT | Manager | Delete session |
+| `PUT` | `/sessions/:id/v1` | JWT | Manager | Update session |
+| `DELETE` | `/sessions/:id/v1` | JWT | Manager | Delete session |
 
 ### Rooms
 
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
 | `GET` | `/rooms/v1` | Public | - | List rooms |
-| `GET` | `/rooms/v1/:id` | Public | - | Get room by ID |
+| `GET` | `/rooms/:id/v1` | Public | - | Get room by ID |
 | `POST` | `/rooms/v1` | JWT | Manager | Create room |
-| `PUT` | `/rooms/v1/:id` | JWT | Manager | Update room capacity |
-| `DELETE` | `/rooms/v1/:id` | JWT | Manager | Delete room |
+| `PUT` | `/rooms/:id/v1` | JWT | Manager | Update room capacity |
+| `DELETE` | `/rooms/:id/v1` | JWT | Manager | Delete room |
 
 ### Tickets
 
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
 | `POST` | `/tickets/v1` | JWT | Customer | Buy tickets (quantity: 1-10, sends email) |
-| `GET` | `/tickets/v1/my` | JWT | Customer | Get my tickets |
-| `GET` | `/tickets/v1/:id` | JWT | Customer | Get ticket by ID |
+| `GET` | `/tickets/my/v1` | JWT | Customer | Get my tickets |
+| `GET` | `/tickets/:id/v1` | JWT | Customer | Get ticket by ID |
 
 ### Watch
 
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
 | `POST` | `/watch/v1` | JWT | Customer | Watch movie |
-| `GET` | `/watch/v1/history` | JWT | Customer | Get watch history |
+| `GET` | `/watch/history/v1` | JWT | Customer | Get watch history |
 
 ## Query Parameters
 

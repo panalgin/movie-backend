@@ -34,7 +34,7 @@ import { CreateRoomDto, GetRoomsDto, UpdateRoomDto } from '../application/dto';
 import { GetRoomByIdQuery, GetRoomsQuery } from '../application/queries';
 
 @ApiTags('Rooms')
-@Controller('rooms/v1')
+@Controller('rooms')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class RoomsController {
   constructor(
@@ -42,7 +42,7 @@ export class RoomsController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Post()
+  @Post('v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new room (Manager only)' })
@@ -59,7 +59,7 @@ export class RoomsController {
     );
   }
 
-  @Get()
+  @Get('v1')
   @Public()
   @ApiOperation({ summary: 'Get all rooms (Public)' })
   @ApiResponse({
@@ -70,7 +70,7 @@ export class RoomsController {
     return this.queryBus.execute(new GetRoomsQuery(query.skip, query.take));
   }
 
-  @Get(':id')
+  @Get(':id/v1')
   @Public()
   @ApiOperation({ summary: 'Get a room by ID (Public)' })
   @ApiParam({ name: 'id', description: 'Room ID' })
@@ -83,7 +83,7 @@ export class RoomsController {
     return this.queryBus.execute(new GetRoomByIdQuery(id));
   }
 
-  @Put(':id')
+  @Put(':id/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a room (Manager only)' })
@@ -105,7 +105,7 @@ export class RoomsController {
     );
   }
 
-  @Delete(':id')
+  @Delete(':id/v1')
   @Roles(UserRole.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a room (Manager only)' })
