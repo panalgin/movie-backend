@@ -149,7 +149,9 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException for invalid email', async () => {
-      (prismaService.user as Record<string, jest.Mock>).findUnique.mockResolvedValue(null);
+      (
+        prismaService.user as Record<string, jest.Mock>
+      ).findUnique.mockResolvedValue(null);
 
       await expect(
         service.login({
@@ -191,17 +193,23 @@ describe('AuthService', () => {
         expiresAt: new Date(Date.now() + 86400000), // 1 day in future
         user: mockUser,
       };
-      (prismaService.refreshToken as Record<string, jest.Mock>).findUnique.mockResolvedValue(storedToken);
+      (
+        prismaService.refreshToken as Record<string, jest.Mock>
+      ).findUnique.mockResolvedValue(storedToken);
 
       const result = await service.refreshTokens('valid-refresh-token');
 
       expect(result).toBeDefined();
       expect(result.accessToken).toBe('access-token');
-      expect((prismaService.refreshToken as Record<string, jest.Mock>).delete).toHaveBeenCalled();
+      expect(
+        (prismaService.refreshToken as Record<string, jest.Mock>).delete,
+      ).toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException for invalid token', async () => {
-      (prismaService.refreshToken as Record<string, jest.Mock>).findUnique.mockResolvedValue(null);
+      (
+        prismaService.refreshToken as Record<string, jest.Mock>
+      ).findUnique.mockResolvedValue(null);
 
       await expect(service.refreshTokens('invalid-token')).rejects.toThrow(
         UnauthorizedException,
@@ -218,7 +226,9 @@ describe('AuthService', () => {
         expiresAt: new Date(Date.now() - 86400000), // 1 day in past
         user: mockUser,
       };
-      (prismaService.refreshToken as Record<string, jest.Mock>).findUnique.mockResolvedValue(expiredToken);
+      (
+        prismaService.refreshToken as Record<string, jest.Mock>
+      ).findUnique.mockResolvedValue(expiredToken);
 
       await expect(service.refreshTokens('expired-token')).rejects.toThrow(
         UnauthorizedException,
@@ -238,7 +248,9 @@ describe('AuthService', () => {
 
       await service.logout('user-id', 'refresh-token');
 
-      expect((prismaService.refreshToken as Record<string, jest.Mock>).deleteMany).toHaveBeenCalledWith({
+      expect(
+        (prismaService.refreshToken as Record<string, jest.Mock>).deleteMany,
+      ).toHaveBeenCalledWith({
         where: {
           userId: 'user-id',
           token: 'refresh-token',

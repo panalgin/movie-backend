@@ -26,9 +26,9 @@ describe('WatchMovieHandler', () => {
 
   beforeEach(async () => {
     watchHistoryRepository = {
-      save: jest.fn().mockImplementation((watchHistory) =>
-        Promise.resolve(watchHistory),
-      ),
+      save: jest
+        .fn()
+        .mockImplementation((watchHistory) => Promise.resolve(watchHistory)),
     };
 
     ticketRepository = {

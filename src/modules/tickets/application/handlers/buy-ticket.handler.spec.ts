@@ -9,8 +9,10 @@ import { AuditService } from '../../../audit/application';
 import { USER_REPOSITORY } from '../../../auth/domain/repositories';
 import { MOVIE_REPOSITORY } from '../../../movies/domain/repositories';
 import { NotificationService } from '../../../notifications/application';
-import { ROOM_REPOSITORY } from '../../../sessions/domain/repositories';
-import { SESSION_REPOSITORY } from '../../../sessions/domain/repositories';
+import {
+  ROOM_REPOSITORY,
+  SESSION_REPOSITORY,
+} from '../../../sessions/domain/repositories';
 import { Ticket } from '../../domain/entities';
 import { TICKET_REPOSITORY } from '../../domain/repositories';
 import { BuyTicketCommand } from '../commands';
@@ -176,7 +178,9 @@ describe('BuyTicketHandler', () => {
     const command = new BuyTicketCommand('user-id', 'session-id', 'CUSTOMER');
 
     await expect(handler.execute(command)).rejects.toThrow(ConflictException);
-    await expect(handler.execute(command)).rejects.toThrow('Session is sold out');
+    await expect(handler.execute(command)).rejects.toThrow(
+      'Session is sold out',
+    );
 
     mockRoom.hasCapacityFor.mockReturnValue(true);
   });

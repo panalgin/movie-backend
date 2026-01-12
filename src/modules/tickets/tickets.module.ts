@@ -4,7 +4,10 @@ import { USER_REPOSITORY } from '../auth/domain/repositories';
 import { PrismaUserRepository } from '../auth/infrastructure/persistence';
 import { MOVIE_REPOSITORY } from '../movies/domain/repositories';
 import { PrismaMovieRepository } from '../movies/infrastructure/persistence';
-import { ROOM_REPOSITORY, SESSION_REPOSITORY } from '../sessions/domain/repositories';
+import {
+  ROOM_REPOSITORY,
+  SESSION_REPOSITORY,
+} from '../sessions/domain/repositories';
 import {
   PrismaRoomRepository,
   PrismaSessionRepository,

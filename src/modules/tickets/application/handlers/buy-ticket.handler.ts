@@ -18,10 +18,14 @@ import {
   NotificationChannel,
   NotificationType,
 } from '../../../notifications/domain/enums';
-import type { IRoomRepository } from '../../../sessions/domain/repositories';
-import { ROOM_REPOSITORY } from '../../../sessions/domain/repositories';
-import type { ISessionRepository } from '../../../sessions/domain/repositories';
-import { SESSION_REPOSITORY } from '../../../sessions/domain/repositories';
+import type {
+  IRoomRepository,
+  ISessionRepository,
+} from '../../../sessions/domain/repositories';
+import {
+  ROOM_REPOSITORY,
+  SESSION_REPOSITORY,
+} from '../../../sessions/domain/repositories';
 import { Ticket } from '../../domain/entities';
 import type { ITicketRepository } from '../../domain/repositories';
 import { TICKET_REPOSITORY } from '../../domain/repositories';
