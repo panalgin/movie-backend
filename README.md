@@ -135,6 +135,50 @@ src/
 
 Swagger UI: **http://localhost:3000/swagger**
 
+## API Versioning Strategy
+
+This API follows a **resource-based versioning** approach, inspired by industry leaders like Stripe and Twilio.
+
+### Version Placement
+
+Version suffix per resource rather than global prefix:
+
+```
+/movies/v1          ← Each resource versioned independently
+/sessions/v1
+/tickets/v1
+
+vs traditional:
+/v1/movies          ← Entire API versioned together (not used)
+```
+
+This enables **granular evolution** - each resource can advance to v2 independently without forcing changes across the entire API.
+
+### Versioning Policy
+
+| Change Type | Action | Client Impact |
+|-------------|--------|---------------|
+| Bug fix (same signature) | Silent deploy | None |
+| Bug fix (signature change) | New version (v2) | Migration required |
+| Additive change (new field) | Add to current version | None* |
+| Breaking change | New version (v2) | Migration required |
+
+*Clients MUST ignore unknown fields in responses. OpenAPI-generated clients support this via `additionalProperties: true`.
+
+### Deprecation Flow
+
+1. Release new version (e.g., `/movies/v2`)
+2. Mark old version as deprecated in code and docs
+3. Notify client development teams
+4. Grace period (typically 3-6 months)
+5. Sunset old version
+
+### Client Contract
+
+- **Backward compatibility** guaranteed within the same version
+- **Unknown fields** in responses should be ignored (forward compatibility)
+- **Required fields** will never be removed within the same version
+
 ## API Endpoints
 
 ### Health
