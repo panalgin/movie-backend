@@ -35,7 +35,9 @@ export class HealthController {
 
   @Get('live')
   @Public()
-  @ApiOperation({ summary: 'Liveness probe - always returns ok if app is running' })
+  @ApiOperation({
+    summary: 'Liveness probe - always returns ok if app is running',
+  })
   @ApiResponse({ status: 200, description: 'Application is alive' })
   live() {
     return { status: 'ok', timestamp: new Date().toISOString() };
@@ -43,7 +45,9 @@ export class HealthController {
 
   @Get('ready')
   @Public()
-  @ApiOperation({ summary: 'Readiness probe - checks if app can serve requests' })
+  @ApiOperation({
+    summary: 'Readiness probe - checks if app can serve requests',
+  })
   @ApiResponse({ status: 200, description: 'Application is ready' })
   @ApiResponse({ status: 503, description: 'Application is not ready' })
   async ready(@Res() res: Response) {

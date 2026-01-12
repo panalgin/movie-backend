@@ -34,8 +34,7 @@ export class HealthService {
       this.checkRedis(),
     ]);
 
-    const allHealthy =
-      database.status === 'ok' && redisHealth.status === 'ok';
+    const allHealthy = database.status === 'ok' && redisHealth.status === 'ok';
     const anyError =
       database.status === 'error' || redisHealth.status === 'error';
 
