@@ -5,13 +5,16 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -25,8 +28,13 @@ import { JwtAuthGuard, RolesGuard } from '../../auth/presentation/guards';
 import {
   CreateSessionCommand,
   DeleteSessionCommand,
+  UpdateSessionCommand,
 } from '../application/commands';
-import { CreateSessionDto, GetSessionsDto } from '../application/dto';
+import {
+  CreateSessionDto,
+  GetSessionsDto,
+  UpdateSessionDto,
+} from '../application/dto';
 import { GetSessionByIdQuery, GetSessionsQuery } from '../application/queries';
 
 @ApiTags('Sessions')
@@ -90,6 +98,36 @@ export class SessionsController {
   })
   async findOne(@Param('id') id: string) {
     return this.queryBus.execute(new GetSessionByIdQuery(id));
+  }
+
+  @Put(':id')
+  @Roles(UserRole.MANAGER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a session (Manager only)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Session updated successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Session or Room not found' })
+  @ApiConflictResponse({ description: 'Room already booked for this time slot' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden - Manager only' })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateSessionDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.commandBus.execute(
+      new UpdateSessionCommand(
+        id,
+        dto.roomId,
+        dto.date ? new Date(dto.date) : undefined,
+        dto.timeSlot,
+        user.id,
+        user.role,
+      ),
+    );
   }
 
   @Delete(':id')

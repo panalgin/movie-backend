@@ -290,6 +290,41 @@ describe('Movie Management System (e2e)', () => {
         ).toBe(true);
       });
     });
+
+    describe('PUT /sessions/v1/:id', () => {
+      it('should allow manager to update session', async () => {
+        const response = await request(app.getHttpServer())
+          .put(`/sessions/v1/${sessionId}`)
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            timeSlot: TimeSlotEnum.SLOT_16_18,
+          })
+          .expect(200);
+
+        expect(response.body.id).toBe(sessionId);
+        expect(response.body.timeSlot).toBe(TimeSlotEnum.SLOT_16_18);
+      });
+
+      it('should reject customer from updating session', async () => {
+        await request(app.getHttpServer())
+          .put(`/sessions/v1/${sessionId}`)
+          .set('Authorization', `Bearer ${customerToken}`)
+          .send({
+            timeSlot: TimeSlotEnum.SLOT_18_20,
+          })
+          .expect(403);
+      });
+
+      it('should return 404 for non-existent session', async () => {
+        await request(app.getHttpServer())
+          .put('/sessions/v1/00000000-0000-0000-0000-000000000000')
+          .set('Authorization', `Bearer ${managerToken}`)
+          .send({
+            timeSlot: TimeSlotEnum.SLOT_18_20,
+          })
+          .expect(404);
+      });
+    });
   });
 
   describe('Tickets', () => {

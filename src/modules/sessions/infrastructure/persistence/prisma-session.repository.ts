@@ -104,6 +104,26 @@ export class PrismaSessionRepository implements ISessionRepository {
     });
   }
 
+  async update(session: Session): Promise<Session> {
+    const updated = await this.prisma.session.update({
+      where: { id: session.id },
+      data: {
+        roomId: session.roomId,
+        date: session.date,
+        timeSlot: session.timeSlot as PrismaTimeSlot,
+      },
+    });
+
+    return Session.reconstitute(updated.id, {
+      movieId: updated.movieId,
+      roomId: updated.roomId,
+      date: updated.date,
+      timeSlot: updated.timeSlot as TimeSlotEnum,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    });
+  }
+
   async delete(id: string): Promise<void> {
     await this.prisma.session.delete({
       where: { id },

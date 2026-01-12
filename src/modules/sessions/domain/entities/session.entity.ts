@@ -127,4 +127,35 @@ export class Session extends BaseEntity<SessionProps> {
 
     return sameDate && sameTimeSlot && sameRoom;
   }
+
+  public update(props: {
+    roomId?: string;
+    date?: Date;
+    timeSlot?: TimeSlotEnum;
+  }): Session {
+    let newDate = this.props.date;
+    if (props.date) {
+      const sessionDate = new Date(props.date);
+      sessionDate.setHours(0, 0, 0, 0);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (sessionDate < today) {
+        throw new DomainException('Session date cannot be in the past');
+      }
+      newDate = sessionDate;
+    }
+
+    return new Session(this._id, {
+      movieId: this.props.movieId,
+      roomId: props.roomId ?? this.props.roomId,
+      date: newDate,
+      timeSlot: props.timeSlot
+        ? TimeSlot.create(props.timeSlot)
+        : this.props.timeSlot,
+      createdAt: this.props.createdAt,
+      updatedAt: new Date(),
+    });
+  }
 }

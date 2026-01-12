@@ -16,6 +16,7 @@ export interface ISessionRepository {
   findAll(options?: FindSessionsOptions): Promise<Session[]>;
   findByMovieId(movieId: string): Promise<Session[]>;
   save(session: Session): Promise<Session>;
+  update(session: Session): Promise<Session>;
   delete(id: string): Promise<void>;
   existsConflict(
     date: Date,

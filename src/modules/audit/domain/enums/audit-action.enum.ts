@@ -14,6 +14,7 @@ export enum AuditAction {
 
   // Sessions
   SESSION_CREATE = 'SESSION_CREATE',
+  SESSION_UPDATE = 'SESSION_UPDATE',
   SESSION_DELETE = 'SESSION_DELETE',
 
   // Tickets
