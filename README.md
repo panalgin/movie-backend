@@ -40,11 +40,12 @@ Domain Layer Coverage:
 
 ### Infrastructure
 - **Health Check**: `/health` endpoint for monitoring
-- **Audit Logging**: Track all manager actions and auth events
+- **Audit Logging**: Track all manager actions and auth events (with IP address)
 - **Notifications**: Email (SendGrid) and SMS (Twilio) support
 - **Caching**: Redis with thundering herd protection
 - **Rate Limiting**: Throttling on sensitive endpoints
-- **Typed Domain Errors**: Error codes for type-safe exception handling
+- **Global Exception Filter**: Consistent error responses with typed error codes
+- **Application & Domain Exceptions**: Layered exception handling with metadata
 
 ## Tech Stack
 
@@ -237,28 +238,61 @@ Sessions use predefined time slots:
 5. **Past Session Prevention**: Cannot create/update sessions to past time slots
 6. **Multiple Ticket Purchase**: Users can buy 1-10 tickets per request (for friends/family)
 
-## Domain Error Codes
+## Error Handling
 
-The API uses typed error codes for consistent error handling:
+### Error Response Format
 
-| Category | Code | Description |
-|----------|------|-------------|
-| Validation | `MOVIE_TITLE_REQUIRED` | Movie title is required |
-| Validation | `INVALID_EMAIL_FORMAT` | Invalid email format |
-| Validation | `USERNAME_TOO_SHORT` | Username too short |
-| Validation | `INVALID_AGE` | Age out of valid range |
-| Validation | `INVALID_TIME_SLOT` | Invalid time slot value |
-| Business | `SESSION_IN_PAST` | Session time is in the past |
+All errors return a consistent JSON structure:
+
+```json
+{
+  "statusCode": 403,
+  "code": "USER_UNDERAGE",
+  "message": "You must be at least 18 years old to buy a ticket for this movie",
+  "metadata": { "userAge": 10, "requiredAge": 18 },
+  "timestamp": "2026-01-12T07:06:09.649Z"
+}
+```
+
+### Application Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `MOVIE_NOT_FOUND` | 404 | Movie does not exist |
+| `SESSION_NOT_FOUND` | 404 | Session does not exist |
+| `TICKET_NOT_FOUND` | 404 | Ticket does not exist |
+| `USER_UNDERAGE` | 403 | User too young for age-restricted movie |
+| `TICKET_NOT_OWNED` | 403 | User doesn't own this ticket |
+| `SESSION_SOLD_OUT` | 409 | No seats available |
+| `SESSION_CONFLICT` | 409 | Room already booked for this slot |
+| `EMAIL_ALREADY_EXISTS` | 409 | Email already registered |
+| `INVALID_CREDENTIALS` | 401 | Wrong email or password |
+| `SESSION_IN_PAST` | 400 | Session time is in the past |
+| `TOO_MANY_REQUESTS` | 429 | Rate limit exceeded |
+
+### Domain Error Codes
+
+| Code | Description |
+|------|-------------|
+| `MOVIE_TITLE_REQUIRED` | Movie title is required |
+| `INVALID_EMAIL_FORMAT` | Invalid email format |
+| `USERNAME_TOO_SHORT` | Username too short |
+| `INVALID_AGE` | Age out of valid range |
+| `INVALID_TIME_SLOT` | Invalid time slot value |
 
 ## Audit Events
 
-All significant actions are logged to the `audit_logs` table:
+All significant actions are logged to the `audit_logs` table with IP address and metadata:
+
+```
+Audit: USER_LOGIN_FAILED by system [::1] on User:N/A | {"email":"hacker@evil.com","reason":"User not found"}
+```
 
 | Action | Trigger |
 |--------|---------|
 | `USER_REGISTER` | New user registration |
 | `USER_LOGIN` | Successful login |
-| `USER_LOGIN_FAILED` | Failed login attempt |
+| `USER_LOGIN_FAILED` | Failed login attempt (with email & reason) |
 | `USER_LOGOUT` | User logout |
 | `MOVIE_CREATE` | Movie created |
 | `MOVIE_UPDATE` | Movie updated |
@@ -266,7 +300,7 @@ All significant actions are logged to the `audit_logs` table:
 | `SESSION_CREATE` | Session created |
 | `SESSION_UPDATE` | Session updated |
 | `SESSION_DELETE` | Session deleted |
-| `TICKET_PURCHASE` | Ticket purchased |
+| `TICKET_PURCHASE` | Ticket purchased (with quantity) |
 
 ## Installation
 
@@ -325,6 +359,21 @@ All significant actions are logged to the `audit_logs` table:
    http://localhost:3000/swagger
    ```
 
+### Local Development Seed
+
+To populate your local database with sample data:
+
+```bash
+# Create prisma/seed.local.ts with your seed logic (gitignored)
+yarn db:seed:local
+```
+
+This creates:
+- 50 movies with various age restrictions
+- 10 rooms with random capacities (30-100 seats)
+- Admin user: `admin@test.com` / `12345678`
+- Sessions for the next 7 days (22:00 slot excluded)
+
 ## Scripts
 
 | Script | Description |
@@ -336,6 +385,7 @@ All significant actions are logged to the `audit_logs` table:
 | `yarn db:migrate` | Create and apply migrations |
 | `yarn db:push` | Push schema to database |
 | `yarn db:studio` | Open Prisma Studio |
+| `yarn db:seed:local` | Seed local database (50 movies, 10 rooms, admin user) |
 | `yarn test` | Run unit tests |
 | `yarn test:e2e` | Run E2E tests |
 | `yarn test:cov` | Run tests with coverage |

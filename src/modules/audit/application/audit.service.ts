@@ -51,8 +51,12 @@ export class AuditService {
 
       await this.auditRepository.create(auditLog);
 
+      const ipStr = context.ipAddress ? ` [${context.ipAddress}]` : '';
+      const metadataStr = params.metadata
+        ? ` | ${JSON.stringify(params.metadata)}`
+        : '';
       this.logger.debug(
-        `Audit: ${params.action} by ${context.actorId ?? 'system'} on ${params.entityType ?? 'N/A'}:${params.entityId ?? 'N/A'}`,
+        `Audit: ${params.action} by ${context.actorId ?? 'system'}${ipStr} on ${params.entityType ?? 'N/A'}:${params.entityId ?? 'N/A'}${metadataStr}`,
       );
     } catch (error) {
       // Audit failures should not break the main flow

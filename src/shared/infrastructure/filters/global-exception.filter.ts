@@ -104,14 +104,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
+      let message: string;
+      if (typeof exceptionResponse === 'string') {
+        message = exceptionResponse;
+      } else {
+        const rawMessage = (exceptionResponse as { message?: string | string[] })
+          .message;
+        message = Array.isArray(rawMessage)
+          ? this.truncateValidationErrors(rawMessage)
+          : rawMessage || exception.message;
+      }
+
       return {
         statusCode: status,
         code: this.getHttpExceptionCode(status),
-        message:
-          typeof exceptionResponse === 'string'
-            ? exceptionResponse
-            : (exceptionResponse as { message?: string }).message ||
-              exception.message,
+        message,
         timestamp,
       };
     }
@@ -136,5 +143,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       [HttpStatus.TOO_MANY_REQUESTS]: 'TOO_MANY_REQUESTS',
     };
     return codeMap[status] || 'HTTP_ERROR';
+  }
+
+  private truncateValidationErrors(errors: string[], maxShow = 3): string {
+    if (errors.length <= maxShow) {
+      return errors.join(', ');
+    }
+    const shown = errors.slice(0, maxShow).join(', ');
+    return `${shown} ...and ${errors.length - maxShow} more`;
   }
 }

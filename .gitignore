@@ -50,3 +50,6 @@ Thumbs.db
 *.tsbuildinfo
 .eslintcache
 
+
+# Local seed script
+prisma/seed.local.ts
