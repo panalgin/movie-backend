@@ -31,6 +31,14 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
+  @ApiPropertyOptional({
+    example: '+905551234567',
+    description: 'Phone number for SMS notifications',
+  })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
   @ApiProperty({
     example: 'password123',
     description: 'User password (min 8, max 100 characters)',

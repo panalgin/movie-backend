@@ -4,13 +4,29 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-7.2-2D3748?logo=prisma)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
 ![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?logo=swagger)
 ![License](https://img.shields.io/badge/License-MIT-green?logo=opensourceinitiative)
 
 A NestJS-based movie management API following Domain-Driven Design (DDD) principles with CQRS pattern, role-based access control, and comprehensive testing.
 
+## Test Coverage
+
+| Type | Tests | Coverage |
+|------|-------|----------|
+| Unit | 72 | Domain entities & value objects |
+| E2E | 23 | Full API integration tests |
+
+```
+Domain Layer Coverage:
+├── Entities:     ~90% (User, Movie, Session, Ticket, WatchHistory)
+├── Value Objects: 100% (UserAge, TimeSlot, AgeRestriction)
+└── Base Classes:  ~50% (BaseEntity, BaseValueObject)
+```
+
 ## Features
 
+### Core
 - **User Registration & Login**: JWT authentication with refresh tokens
 - **Role-Based Access Control**: Manager and Customer roles
 - **Movie Management**: Full CRUD with age restrictions
@@ -19,17 +35,26 @@ A NestJS-based movie management API following Domain-Driven Design (DDD) princip
 - **Watch History**: Track watched movies with valid tickets
 - **Bulk Operations**: Batch create/delete movies
 
+### Infrastructure
+- **Health Check**: `/health` endpoint for monitoring
+- **Audit Logging**: Track all manager actions and auth events
+- **Notifications**: Email (SendGrid) and SMS (Twilio) support
+- **Caching**: Redis with thundering herd protection
+- **Rate Limiting**: Throttling on sensitive endpoints
+
 ## Tech Stack
 
 - **Framework:** NestJS 11
 - **Language:** TypeScript 5.7
 - **Database:** PostgreSQL 16
+- **Cache:** Redis 7
 - **ORM:** Prisma 7.2
 - **Authentication:** JWT + Passport
 - **Documentation:** Swagger/OpenAPI
 - **Architecture:** DDD + CQRS
 - **Linter/Formatter:** Biome
 - **Commit Convention:** Conventional Commits
+- **CI/CD:** GitHub Actions + Heroku
 
 ## Project Structure (DDD)
 
@@ -46,7 +71,8 @@ src/
 │   │   ├── base.value-object.ts         # Base value object class
 │   │   └── domain.exception.ts          # Domain exceptions
 │   └── infrastructure/
-│       └── prisma/                      # Database layer
+│       ├── prisma/                      # Database layer
+│       └── redis/                       # Cache layer
 │
 └── modules/
     ├── auth/                            # Auth Bounded Context
@@ -81,22 +107,19 @@ src/
     │       └── movies.controller.ts
     │
     ├── sessions/                        # Sessions Bounded Context
-    │   ├── application/
-    │   ├── domain/
-    │   ├── infrastructure/
-    │   └── presentation/
-    │
     ├── tickets/                         # Tickets Bounded Context
-    │   ├── application/
-    │   ├── domain/
-    │   ├── infrastructure/
-    │   └── presentation/
+    ├── watch/                           # Watch History Bounded Context
     │
-    └── watch/                           # Watch History Bounded Context
-        ├── application/
+    ├── health/                          # Health Check Module
+    ├── audit/                           # Audit Logging Module
+    └── notifications/                   # Notifications Module
         ├── domain/
-        ├── infrastructure/
-        └── presentation/
+        │   ├── enums/                   # NotificationChannel, NotificationType
+        │   └── interfaces/              # INotificationProvider
+        └── infrastructure/
+            └── providers/
+                ├── email/               # SendGrid
+                └── sms/                 # Twilio
 ```
 
 ## API Documentation
@@ -104,6 +127,12 @@ src/
 Swagger UI: **http://localhost:3000/swagger**
 
 ## API Endpoints
+
+### Health
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/health` | Public | Health check |
 
 ### Auth
 
@@ -119,8 +148,8 @@ Swagger UI: **http://localhost:3000/swagger**
 
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
-| `GET` | `/movies/v1` | Public | - | List movies (with filtering/sorting) |
-| `GET` | `/movies/v1/:id` | Public | - | Get movie by ID |
+| `GET` | `/movies/v1` | Public | - | List movies (cached, with filtering/sorting) |
+| `GET` | `/movies/v1/:id` | Public | - | Get movie by ID (cached) |
 | `POST` | `/movies/v1` | JWT | Manager | Create movie |
 | `PUT` | `/movies/v1/:id` | JWT | Manager | Update movie |
 | `DELETE` | `/movies/v1/:id` | JWT | Manager | Delete movie |
@@ -140,7 +169,7 @@ Swagger UI: **http://localhost:3000/swagger**
 
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
-| `POST` | `/tickets/v1` | JWT | Customer | Buy ticket |
+| `POST` | `/tickets/v1` | JWT | Customer | Buy ticket (sends email) |
 | `GET` | `/tickets/v1/my` | JWT | Customer | Get my tickets |
 | `GET` | `/tickets/v1/:id` | JWT | Customer | Get ticket by ID |
 
@@ -197,13 +226,30 @@ Sessions use predefined time slots:
 3. **Ticket Validation**: Users can only watch movies they have tickets for
 4. **Past Session Prevention**: Cannot buy tickets for past sessions
 
+## Audit Events
+
+All significant actions are logged to the `audit_logs` table:
+
+| Action | Trigger |
+|--------|---------|
+| `USER_REGISTER` | New user registration |
+| `USER_LOGIN` | Successful login |
+| `USER_LOGIN_FAILED` | Failed login attempt |
+| `USER_LOGOUT` | User logout |
+| `MOVIE_CREATE` | Movie created |
+| `MOVIE_UPDATE` | Movie updated |
+| `MOVIE_DELETE` | Movie deleted |
+| `SESSION_CREATE` | Session created |
+| `SESSION_DELETE` | Session deleted |
+| `TICKET_PURCHASE` | Ticket purchased |
+
 ## Installation
 
 ### Prerequisites
 
 - Node.js 22+
 - Yarn
-- Docker (for PostgreSQL)
+- Docker (for PostgreSQL and Redis)
 
 ### Steps
 
@@ -212,7 +258,7 @@ Sessions use predefined time slots:
    yarn install
    ```
 
-2. **Start PostgreSQL:**
+2. **Start PostgreSQL and Redis:**
    ```bash
    docker compose up -d
    ```
@@ -223,9 +269,20 @@ Sessions use predefined time slots:
    ```
    
    Required variables:
-   ```
+   ```env
    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/movie_db?schema=public"
    JWT_SECRET="your-secret-key"
+   REDIS_HOST="localhost"
+   REDIS_PORT=6379
+   ```
+   
+   Optional (for notifications):
+   ```env
+   SENDGRID_API_KEY=your-sendgrid-key
+   SENDGRID_FROM_EMAIL=noreply@example.com
+   TWILIO_ACCOUNT_SID=your-twilio-sid
+   TWILIO_AUTH_TOKEN=your-twilio-token
+   TWILIO_FROM_NUMBER=+1234567890
    ```
 
 4. **Push database schema:**
@@ -242,64 +299,6 @@ Sessions use predefined time slots:
    ```
    http://localhost:3000/swagger
    ```
-
-## Database Schema
-
-```prisma
-enum Role {
-  MANAGER
-  CUSTOMER
-}
-
-enum TimeSlot {
-  SLOT_10_12
-  SLOT_12_14
-  SLOT_14_16
-  SLOT_16_18
-  SLOT_18_20
-  SLOT_20_22
-  SLOT_22_00
-}
-
-model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  email     String   @unique
-  age       Int
-  role      Role     @default(CUSTOMER)
-  // ... relations
-}
-
-model Movie {
-  id             String    @id @default(uuid())
-  title          String
-  description    String?
-  ageRestriction Int       @default(0)
-  sessions       Session[]
-}
-
-model Session {
-  id         String   @id @default(uuid())
-  movieId    String
-  date       DateTime
-  timeSlot   TimeSlot
-  roomNumber Int
-  @@unique([date, timeSlot, roomNumber])
-}
-
-model Ticket {
-  id        String @id @default(uuid())
-  userId    String
-  sessionId String
-  @@unique([userId, sessionId])
-}
-
-model WatchHistory {
-  id      String   @id @default(uuid())
-  userId  String
-  movieId String
-}
-```
 
 ## Scripts
 
@@ -326,15 +325,20 @@ yarn test
 
 ### E2E Tests
 ```bash
-docker compose up -d movie-db-test
+docker compose up -d
 yarn test:e2e
+```
+
+### Coverage
+```bash
+yarn test:cov
 ```
 
 ## Architecture Decisions
 
 ### Domain-Driven Design (DDD)
 
-- **Bounded Contexts**: Auth, Movies, Sessions, Tickets, Watch
+- **Bounded Contexts**: Auth, Movies, Sessions, Tickets, Watch, Audit, Notifications
 - **Rich Domain Models**: Entities with business logic
 - **Value Objects**: TimeSlot, AgeRestriction, UserAge
 - **Repository Pattern**: Abstract persistence layer
@@ -350,7 +354,21 @@ yarn test:e2e
 - **Presentation**: Controllers, DTOs
 - **Application**: Commands, Queries, Handlers
 - **Domain**: Entities, Value Objects, Repository Interfaces
-- **Infrastructure**: Repository Implementations, Database
+- **Infrastructure**: Repository Implementations, Database, Cache
+
+### Caching Strategy
+
+- **Thundering Herd Protection**: Redis locks prevent cache stampede
+- **Cache TTL**: 30 seconds for movie listings
+- **Cache Keys**: `movies:list:*`, `movies:detail:*`
+
+## Deployment
+
+The application is configured for Heroku deployment with:
+
+- **GitHub Actions**: CI/CD pipeline
+- **Procfile**: Web dyno configuration
+- **Prisma Migrations**: Run on release
 
 ## License
 

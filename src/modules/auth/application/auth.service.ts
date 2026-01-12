@@ -49,6 +49,7 @@ export class AuthService {
     const user = User.create({
       username: dto.username,
       email: dto.email,
+      phone: dto.phone,
       age: dto.age,
       role: dto.role,
     });
@@ -62,6 +63,7 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
+        phone: user.phone,
         age: user.age,
         role: user.role,
         authProviders: {
@@ -93,6 +95,7 @@ export class AuthService {
       User.reconstitute(savedUser.id, {
         username: savedUser.username,
         email: savedUser.email,
+        phone: savedUser.phone,
         age: savedUser.age,
         role: savedUser.role as UserRole,
         createdAt: savedUser.createdAt,
@@ -170,6 +173,7 @@ export class AuthService {
     const user = User.reconstitute(prismaUser.id, {
       username: prismaUser.username,
       email: prismaUser.email,
+      phone: prismaUser.phone,
       age: prismaUser.age,
       role: prismaUser.role as UserRole,
       createdAt: prismaUser.createdAt,
@@ -215,6 +219,7 @@ export class AuthService {
     const user = User.reconstitute(storedToken.user.id, {
       username: storedToken.user.username,
       email: storedToken.user.email,
+      phone: storedToken.user.phone,
       age: storedToken.user.age,
       role: storedToken.user.role as UserRole,
       createdAt: storedToken.user.createdAt,

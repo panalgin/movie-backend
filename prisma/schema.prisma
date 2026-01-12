@@ -33,6 +33,7 @@ model User {
   id               String         @id @default(uuid())
   username         String         @unique
   email            String         @unique
+  phone            String?
   age              Int
   role             Role           @default(CUSTOMER)
   createdAt        DateTime       @default(now())

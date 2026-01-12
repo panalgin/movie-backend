@@ -19,6 +19,7 @@ export class PrismaUserRepository implements IUserRepository {
     return User.reconstitute(user.id, {
       username: user.username,
       email: user.email,
+      phone: user.phone,
       age: user.age,
       role: user.role as UserRole,
       createdAt: user.createdAt,
@@ -38,6 +39,7 @@ export class PrismaUserRepository implements IUserRepository {
     return User.reconstitute(user.id, {
       username: user.username,
       email: user.email,
+      phone: user.phone,
       age: user.age,
       role: user.role as UserRole,
       createdAt: user.createdAt,
@@ -57,6 +59,7 @@ export class PrismaUserRepository implements IUserRepository {
     return User.reconstitute(user.id, {
       username: user.username,
       email: user.email,
+      phone: user.phone,
       age: user.age,
       role: user.role as UserRole,
       createdAt: user.createdAt,
@@ -70,6 +73,7 @@ export class PrismaUserRepository implements IUserRepository {
         id: user.id,
         username: user.username,
         email: user.email,
+        phone: user.phone,
         age: user.age,
         role: user.role,
       },
@@ -78,6 +82,7 @@ export class PrismaUserRepository implements IUserRepository {
     return User.reconstitute(saved.id, {
       username: saved.username,
       email: saved.email,
+      phone: saved.phone,
       age: saved.age,
       role: saved.role as UserRole,
       createdAt: saved.createdAt,

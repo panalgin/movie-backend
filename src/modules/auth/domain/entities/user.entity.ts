@@ -9,6 +9,7 @@ export enum UserRole {
 interface UserProps {
   username: string;
   email: string;
+  phone: string | null;
   age: UserAge;
   role: UserRole;
   createdAt: Date;
@@ -18,6 +19,7 @@ interface UserProps {
 export interface CreateUserProps {
   username: string;
   email: string;
+  phone?: string | null;
   age: number;
   role?: UserRole;
 }
@@ -33,6 +35,10 @@ export class User extends BaseEntity<UserProps> {
 
   get email(): string {
     return this.props.email;
+  }
+
+  get phone(): string | null {
+    return this.props.phone;
   }
 
   get age(): number {
@@ -66,6 +72,7 @@ export class User extends BaseEntity<UserProps> {
     return new User(crypto.randomUUID(), {
       username: props.username.trim(),
       email: props.email.toLowerCase().trim(),
+      phone: props.phone?.trim() || null,
       age: userAge,
       role: props.role ?? UserRole.CUSTOMER,
       createdAt: now,
@@ -78,6 +85,7 @@ export class User extends BaseEntity<UserProps> {
     props: {
       username: string;
       email: string;
+      phone: string | null;
       age: number;
       role: UserRole;
       createdAt: Date;
@@ -87,6 +95,7 @@ export class User extends BaseEntity<UserProps> {
     return new User(id, {
       username: props.username,
       email: props.email,
+      phone: props.phone,
       age: UserAge.create(props.age),
       role: props.role,
       createdAt: props.createdAt,
