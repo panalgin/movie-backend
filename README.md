@@ -402,9 +402,14 @@ Audit: USER_LOGIN_FAILED by system [::1] on User:N/A | {"email":"hacker@evil.com
    TWILIO_FROM_NUMBER=+1234567890
    ```
 
-4. **Push database schema:**
+4. **Apply database schema (local/dev):**
    ```bash
    yarn db:push
+   ```
+   
+   Or if you prefer migrations locally:
+   ```bash
+   yarn db:migrate
    ```
 
 5. **Start the application:**
@@ -422,7 +427,6 @@ Audit: USER_LOGIN_FAILED by system [::1] on User:N/A | {"email":"hacker@evil.com
 To populate your local database with sample data:
 
 ```bash
-# Create prisma/seed.local.ts with your seed logic (gitignored)
 yarn db:seed:local
 ```
 
@@ -441,6 +445,7 @@ This creates:
 | `yarn build` | Build the project |
 | `yarn db:generate` | Generate Prisma client |
 | `yarn db:migrate` | Create and apply migrations |
+| `yarn db:migrate:deploy` | Apply migrations (production) |
 | `yarn db:push` | Push schema to database |
 | `yarn db:studio` | Open Prisma Studio |
 | `yarn db:seed:local` | Seed local database (50 movies, 10 rooms, admin user) |
@@ -503,7 +508,7 @@ The application is configured for Heroku deployment with:
 
 - **GitHub Actions**: CI/CD pipeline
 - **Procfile**: Web dyno configuration
-- **Prisma Migrations**: Run on release
+- **Prisma Migrations**: Run on release (`prisma migrate deploy`)
 
 ## TypeScript Client
 

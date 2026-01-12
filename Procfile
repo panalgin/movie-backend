@@ -1,2 +1,2 @@
 web: yarn start:prod
-release: npx prisma db push
+release: yarn db:migrate:deploy
