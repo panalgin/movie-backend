@@ -3,18 +3,18 @@ import { TimeSlot, TimeSlotEnum } from '../../../movies/domain/value-objects';
 
 interface SessionProps {
   movieId: string;
+  roomId: string;
   date: Date;
   timeSlot: TimeSlot;
-  roomNumber: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CreateSessionProps {
   movieId: string;
+  roomId: string;
   date: Date;
   timeSlot: TimeSlotEnum;
-  roomNumber: number;
 }
 
 export class Session extends BaseEntity<SessionProps> {
@@ -24,6 +24,10 @@ export class Session extends BaseEntity<SessionProps> {
 
   get movieId(): string {
     return this.props.movieId;
+  }
+
+  get roomId(): string {
+    return this.props.roomId;
   }
 
   get date(): Date {
@@ -36,10 +40,6 @@ export class Session extends BaseEntity<SessionProps> {
 
   get timeSlotLabel(): string {
     return this.props.timeSlot.label;
-  }
-
-  get roomNumber(): number {
-    return this.props.roomNumber;
   }
 
   get createdAt(): Date {
@@ -55,12 +55,12 @@ export class Session extends BaseEntity<SessionProps> {
       throw new DomainException('Movie ID is required');
     }
 
-    if (!props.date) {
-      throw new DomainException('Session date is required');
+    if (!props.roomId) {
+      throw new DomainException('Room ID is required');
     }
 
-    if (props.roomNumber < 1) {
-      throw new DomainException('Room number must be at least 1');
+    if (!props.date) {
+      throw new DomainException('Session date is required');
     }
 
     const sessionDate = new Date(props.date);
@@ -77,9 +77,9 @@ export class Session extends BaseEntity<SessionProps> {
 
     return new Session(crypto.randomUUID(), {
       movieId: props.movieId,
+      roomId: props.roomId,
       date: sessionDate,
       timeSlot: TimeSlot.create(props.timeSlot),
-      roomNumber: props.roomNumber,
       createdAt: now,
       updatedAt: now,
     });
@@ -89,18 +89,18 @@ export class Session extends BaseEntity<SessionProps> {
     id: string,
     props: {
       movieId: string;
+      roomId: string;
       date: Date;
       timeSlot: TimeSlotEnum;
-      roomNumber: number;
       createdAt: Date;
       updatedAt: Date;
     },
   ): Session {
     return new Session(id, {
       movieId: props.movieId,
+      roomId: props.roomId,
       date: props.date,
       timeSlot: TimeSlot.create(props.timeSlot),
-      roomNumber: props.roomNumber,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
     });
@@ -123,7 +123,7 @@ export class Session extends BaseEntity<SessionProps> {
   public conflictsWith(other: Session): boolean {
     const sameDate = this.props.date.getTime() === other.props.date.getTime();
     const sameTimeSlot = this.props.timeSlot.equals(other.props.timeSlot);
-    const sameRoom = this.props.roomNumber === other.props.roomNumber;
+    const sameRoom = this.props.roomId === other.props.roomId;
 
     return sameDate && sameTimeSlot && sameRoom;
   }

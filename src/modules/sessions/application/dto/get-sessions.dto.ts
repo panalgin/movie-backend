@@ -12,22 +12,20 @@ export class GetSessionsDto {
   movieId?: string;
 
   @ApiPropertyOptional({
+    example: '550e8400-e29b-41d4-a716-446655440001',
+    description: 'Filter by room ID',
+  })
+  @IsOptional()
+  @IsUUID()
+  roomId?: string;
+
+  @ApiPropertyOptional({
     example: '2024-12-25',
     description: 'Filter by date',
   })
   @IsOptional()
   @IsDateString()
   date?: string;
-
-  @ApiPropertyOptional({
-    example: 1,
-    description: 'Filter by room number',
-  })
-  @IsOptional()
-  @Transform(({ value }) => (value ? Number.parseInt(value, 10) : undefined))
-  @IsInt()
-  @Min(1)
-  roomNumber?: number;
 
   @ApiPropertyOptional({
     example: 0,

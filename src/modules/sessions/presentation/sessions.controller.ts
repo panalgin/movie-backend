@@ -52,9 +52,9 @@ export class SessionsController {
     return this.commandBus.execute(
       new CreateSessionCommand(
         dto.movieId,
+        dto.roomId,
         new Date(dto.date),
         dto.timeSlot,
-        dto.roomNumber,
         user.id,
         user.role,
       ),
@@ -72,8 +72,8 @@ export class SessionsController {
     return this.queryBus.execute(
       new GetSessionsQuery(
         query.movieId,
+        query.roomId,
         query.date ? new Date(query.date) : undefined,
-        query.roomNumber,
         query.skip,
         query.take,
       ),

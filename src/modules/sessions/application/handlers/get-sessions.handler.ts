@@ -15,8 +15,8 @@ export class GetSessionsHandler implements IQueryHandler<GetSessionsQuery> {
   async execute(query: GetSessionsQuery): Promise<Session[]> {
     return this.sessionRepository.findAll({
       movieId: query.movieId,
+      roomId: query.roomId,
       date: query.date,
-      roomNumber: query.roomNumber,
       skip: query.skip,
       take: query.take,
     });

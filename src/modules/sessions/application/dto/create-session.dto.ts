@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsInt, IsUUID, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsUUID } from 'class-validator';
 import { TimeSlotEnum } from '../../../movies/domain/value-objects';
 
 export class CreateSessionDto {
@@ -9,6 +9,13 @@ export class CreateSessionDto {
   })
   @IsUUID()
   movieId: string;
+
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440001',
+    description: 'Room ID',
+  })
+  @IsUUID()
+  roomId: string;
 
   @ApiProperty({
     example: '2024-12-25',
@@ -24,13 +31,4 @@ export class CreateSessionDto {
   })
   @IsEnum(TimeSlotEnum)
   timeSlot: TimeSlotEnum;
-
-  @ApiProperty({
-    example: 1,
-    description: 'Room number',
-    minimum: 1,
-  })
-  @IsInt()
-  @Min(1)
-  roomNumber: number;
 }

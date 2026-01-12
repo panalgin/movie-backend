@@ -23,9 +23,9 @@ export class PrismaSessionRepository implements ISessionRepository {
 
     return Session.reconstitute(session.id, {
       movieId: session.movieId,
+      roomId: session.roomId,
       date: session.date,
       timeSlot: session.timeSlot as TimeSlotEnum,
-      roomNumber: session.roomNumber,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
     });
@@ -38,12 +38,12 @@ export class PrismaSessionRepository implements ISessionRepository {
       where.movieId = options.movieId;
     }
 
-    if (options?.date) {
-      where.date = options.date;
+    if (options?.roomId) {
+      where.roomId = options.roomId;
     }
 
-    if (options?.roomNumber) {
-      where.roomNumber = options.roomNumber;
+    if (options?.date) {
+      where.date = options.date;
     }
 
     const sessions = await this.prisma.session.findMany({
@@ -56,9 +56,9 @@ export class PrismaSessionRepository implements ISessionRepository {
     return sessions.map((session) =>
       Session.reconstitute(session.id, {
         movieId: session.movieId,
+        roomId: session.roomId,
         date: session.date,
         timeSlot: session.timeSlot as TimeSlotEnum,
-        roomNumber: session.roomNumber,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
       }),
@@ -74,9 +74,9 @@ export class PrismaSessionRepository implements ISessionRepository {
     return sessions.map((session) =>
       Session.reconstitute(session.id, {
         movieId: session.movieId,
+        roomId: session.roomId,
         date: session.date,
         timeSlot: session.timeSlot as TimeSlotEnum,
-        roomNumber: session.roomNumber,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
       }),
@@ -88,17 +88,17 @@ export class PrismaSessionRepository implements ISessionRepository {
       data: {
         id: session.id,
         movieId: session.movieId,
+        roomId: session.roomId,
         date: session.date,
         timeSlot: session.timeSlot as PrismaTimeSlot,
-        roomNumber: session.roomNumber,
       },
     });
 
     return Session.reconstitute(saved.id, {
       movieId: saved.movieId,
+      roomId: saved.roomId,
       date: saved.date,
       timeSlot: saved.timeSlot as TimeSlotEnum,
-      roomNumber: saved.roomNumber,
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,
     });
@@ -113,13 +113,13 @@ export class PrismaSessionRepository implements ISessionRepository {
   async existsConflict(
     date: Date,
     timeSlot: TimeSlotEnum,
-    roomNumber: number,
+    roomId: string,
     excludeId?: string,
   ): Promise<boolean> {
     const where: Prisma.SessionWhereInput = {
       date,
       timeSlot: timeSlot as PrismaTimeSlot,
-      roomNumber,
+      roomId,
     };
 
     if (excludeId) {

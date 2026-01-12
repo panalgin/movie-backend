@@ -1,12 +1,12 @@
 import type { TimeSlotEnum } from '../../../movies/domain/value-objects';
-import { Session } from '../entities';
+import type { Session } from '../entities';
 
 export const SESSION_REPOSITORY = Symbol('SESSION_REPOSITORY');
 
 export interface FindSessionsOptions {
   movieId?: string;
+  roomId?: string;
   date?: Date;
-  roomNumber?: number;
   skip?: number;
   take?: number;
 }
@@ -20,7 +20,7 @@ export interface ISessionRepository {
   existsConflict(
     date: Date,
     timeSlot: TimeSlotEnum,
-    roomNumber: number,
+    roomId: string,
     excludeId?: string,
   ): Promise<boolean>;
 }
