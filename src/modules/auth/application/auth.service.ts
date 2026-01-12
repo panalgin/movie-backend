@@ -21,6 +21,15 @@ export interface AuthContext {
   userAgent?: string;
 }
 
+/**
+ * AuthService intentionally bypasses repository pattern and uses PrismaService directly.
+ *
+ * Rationale:
+ * - Auth operations (register, login) are atomic flows requiring transactional consistency
+ * - CQRS pattern doesn't fit well here - auth operations return tokens, not void
+ * - User + AuthProvider + RefreshToken creation must happen in a single transaction
+ * - Forcing this into Command/Query handlers would add unnecessary complexity
+ */
 @Injectable()
 export class AuthService {
   constructor(
