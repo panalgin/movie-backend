@@ -3,8 +3,11 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { MOVIE_REPOSITORY } from '../movies/domain/repositories';
 import { PrismaMovieRepository } from '../movies/infrastructure/persistence';
 import { CommandHandlers, QueryHandlers } from './application/handlers';
-import { SESSION_REPOSITORY } from './domain/repositories';
-import { PrismaSessionRepository } from './infrastructure/persistence';
+import { ROOM_REPOSITORY, SESSION_REPOSITORY } from './domain/repositories';
+import {
+  PrismaRoomRepository,
+  PrismaSessionRepository,
+} from './infrastructure/persistence';
 import { SessionsController } from './presentation';
 
 @Module({
@@ -18,10 +21,14 @@ import { SessionsController } from './presentation';
       useClass: PrismaSessionRepository,
     },
     {
+      provide: ROOM_REPOSITORY,
+      useClass: PrismaRoomRepository,
+    },
+    {
       provide: MOVIE_REPOSITORY,
       useClass: PrismaMovieRepository,
     },
   ],
-  exports: [SESSION_REPOSITORY],
+  exports: [SESSION_REPOSITORY, ROOM_REPOSITORY],
 })
 export class SessionsModule {}
