@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { AuditLog } from '../domain/entities';
 import { AuditAction, AuditEntityType, AuditStatus } from '../domain/enums';
@@ -9,6 +10,10 @@ describe('AuditService', () => {
   let auditRepository: Record<string, jest.Mock>;
 
   beforeEach(async () => {
+    // Suppress logger output during tests
+    jest.spyOn(Logger.prototype, 'debug').mockImplementation();
+    jest.spyOn(Logger.prototype, 'error').mockImplementation();
+
     auditRepository = {
       create: jest.fn().mockResolvedValue(undefined),
       findByActorId: jest.fn().mockResolvedValue([]),
@@ -25,6 +30,10 @@ describe('AuditService', () => {
     }).compile();
 
     service = module.get<AuditService>(AuditService);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('log', () => {
