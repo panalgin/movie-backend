@@ -15,13 +15,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
-    this.client = new Redis({
-      host: this.configService.get('REDIS_HOST') || 'localhost',
-      port: this.configService.get('REDIS_PORT') || 6379,
-      lazyConnect: true,
-    });
+    const redisUrl = this.configService.get<string>('REDIS_URL');
 
-    await this.client.connect();
+    if (redisUrl) {
+      this.client = new Redis(redisUrl);
+    } else {
+      this.client = new Redis({
+        host: this.configService.get('REDIS_HOST') || 'localhost',
+        port: this.configService.get('REDIS_PORT') || 6379,
+        lazyConnect: true,
+      });
+      await this.client.connect();
+    }
+
     this.logger.log('Redis connected');
   }
 
